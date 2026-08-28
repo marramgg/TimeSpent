@@ -1,0 +1,35 @@
+name: test
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: No secrets in tracked files
+        run: |
+          if git ls-files | grep -Ei 'token|\.env$|\.secrets' ; then echo "::error::a secret-looking file is tracked"; exit 1; fi
+          if git grep -nE 'github_pat_[A-Za-z0-9_]{20,}|gh[pousr]_[A-Za-z0-9]{30,}' -- . ':!.github/workflows/ci.yml' ; then echo "::error::a GitHub token pattern is committed"; exit 1; fi
+      - name: index.html matches the sources (python3 build.py)
+        run: |
+          python3 build.py
+          cmp dist/index.html index.html || { echo "::error::index.html is stale - run: python3 build.py && cp dist/index.html index.html"; exit 1; }
+      - name: Simulation (node test/sim.js)
+        run: node test/sim.js
+      - name: Playwright playthrough (node test/ui-play.js)
+        run: |
+          npm init -y >/dev/null
+          npm i --no-audit --no-fund playwright@1
+          npx playwright install --with-deps chromium
+          node test/ui-play.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots
+          path: test/shots
+          if-no-files-found: ignore

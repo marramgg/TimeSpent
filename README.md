@@ -13,7 +13,7 @@ It's a turn-based day game for a 5-year-old: one turn is one day, from 7:00 to b
 
 ## Change it
 
-Sources live in `src/`; `python3 build.py` rebuilds `dist/index.html` and `dist/artifact.html` (body-only version for claude.ai artifacts).
+Sources live in `src/`; `python3 build.py` rebuilds `dist/index.html` (copy it to `index.html`). Changes go through pull requests: CI runs the tests on every PR and `main` only accepts green ones (see `CLAUDE.md` for the exact steps).
 
 | File | What's in it |
 |---|---|
