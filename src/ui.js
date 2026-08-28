@@ -86,15 +86,18 @@
     if (w.key === 'shiftStarts') return fmt(Lx.why.shiftStarts, { t: fmtTime(w.t) });
     return fmt(Lx.why[w.key] || '', { n: w.n });
   }
-  function timeDiscs(min) {
+  // mini clock discs: 1 disc = 1 h, a half-filled disc = ½ h; `extra` minutes (the sleepy slowdown) are drawn as purple discs
+  function timeDiscs(min, extra) {
     let html = '<span class="tchips">';
-    const full = Math.floor(min / 60), half = (min % 60) >= 30;
-    const disc = (h) => h ? `<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="#fff" stroke="#33241A" stroke-width="2"/><path d="M10,10 L10,2 A8,8 0 0 1 10,18 Z" fill="#F6C445"/><circle cx="10" cy="10" r="1.5" fill="#33241A"/></svg>`
-      : `<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="#F6C445" stroke="#33241A" stroke-width="2"/><circle cx="10" cy="10" r="1.5" fill="#33241A"/><path d="M10,10 L10,3.5" stroke="#33241A" stroke-width="2" stroke-linecap="round"/></svg>`;
-    for (let i = 0; i < Math.min(full, 12); i++) html += disc(false);
-    if (half) html += disc(true);
+    const disc = (h, slow) => { const fill = slow ? '#9C8BE0' : '#F6C445'; return h
+      ? `<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="#fff" stroke="#33241A" stroke-width="2"/><path d="M10,10 L10,2 A8,8 0 0 1 10,18 Z" fill="${fill}"/><circle cx="10" cy="10" r="1.5" fill="#33241A"/></svg>`
+      : `<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="${fill}" stroke="#33241A" stroke-width="2"/><circle cx="10" cy="10" r="1.5" fill="#33241A"/><path d="M10,10 L10,3.5" stroke="#33241A" stroke-width="2" stroke-linecap="round"/></svg>`; };
+    const draw = (m, slow) => { const full = Math.floor(m / 60), half = (m % 60) >= 30; for (let i = 0; i < Math.min(full, 12); i++) html += disc(false, slow); if (half) html += disc(true, slow); };
+    draw(min - (extra || 0), false);
+    if (extra) { html += '<span class="slowz">💤</span>'; draw(extra, true); }
     return html + '</span>';
   }
+  const fmtH = (min) => `${Math.floor(min / 60)}${min % 60 >= 30 ? '½' : ''} h`;
   // decreases are highlighted (red pill); increases stay plain
   const effChip = (ico, d) => {
     if (!d || Math.abs(d) < 1) return '';
@@ -151,21 +154,22 @@
   }
 
   // ---------- day bar: 24 hours from 7:00, what happened + the plan (+ a preview of the next action) ----------
-  const DAY_HOURS = (E.BEDTIME - E.DAY_START) / 60; // 14
-  function renderDayBar(container, timeline, time, bands, preview) {
+  // Cells after the usual 21:00 bedtime are "late" (playable until midnight); from the real bedtime (bedAt, else midnight) on, the night is dark.
+  const BED_HOUR = (E.BEDTIME - E.DAY_START) / 60, LATEST_HOUR = (E.LATEST_BED - E.DAY_START) / 60; // 14, 17
+  function renderDayBar(container, timeline, time, bands, preview, bedAt) {
     const col = (c) => c ? E.CAT_COLORS[c] : 'transparent';
     const pv = {}; // slot -> cat for the preview
     if (preview && time != null) for (let i = 0; i < preview.minutes / E.STEP; i++) { const slot = (time - E.DAY_START) / E.STEP + i; if (slot >= 0 && slot < E.SLOTS && !timeline[slot]) pv[slot] = preview.cat; }
-    const half = (slot) => timeline[slot] ? col(timeline[slot]) : 'transparent';
+    const nightSlot = bedAt != null ? (bedAt - E.DAY_START) / E.STEP : E.SLOTS; // first half-hour that is asleep
+    const NIGHT = 'var(--night-2)';
+    const half = (slot) => slot >= nightSlot ? NIGHT : timeline[slot] ? col(timeline[slot]) : 'transparent';
     let cells = '';
     for (let i = 0; i < 24; i++) {
-      const h = 7 + i;
-      if (h >= 7 + DAY_HOURS) { cells += '<i class="c night"></i>'; continue; }
-      const s0 = (h - 7) * 2;
-      const a = half(s0), b = half(s0 + 1);
+      const s0 = i * 2;
+      if (s0 >= nightSlot || i >= LATEST_HOUR) { cells += '<i class="c night"></i>'; continue; }
       const pa = pv[s0] != null && !timeline[s0], pb = pv[s0 + 1] != null && !timeline[s0 + 1];
       const bg = (x, isPv) => isPv ? `repeating-linear-gradient(135deg, ${E.CAT_COLORS[pv[x]]} 0 3px, rgba(255,255,255,.55) 3px 6px)` : half(x);
-      cells += `<i class="c${pa || pb ? ' pv' : ''}"><b style="background:${bg(s0, pa)}"></b><b style="background:${bg(s0 + 1, pb)}"></b></i>`;
+      cells += `<i class="c${pa || pb ? ' pv' : ''}${i >= BED_HOUR ? ' late' : ''}"><b style="background:${bg(s0, pa)}"></b><b style="background:${bg(s0 + 1, pb)}"></b></i>`;
     }
     const plan = (bands || []).map(b => `<span class="band" role="button" tabindex="0" data-band="${b.id}" style="left:${((b.from - 7) / 24 * 100).toFixed(2)}%;width:${((b.to - b.from) / 24 * 100).toFixed(2)}%;background:${E.CAT_COLORS[b.cat]}"><em>${b.emoji}</em></span>`).join('');
     let labels = '';
@@ -174,7 +178,7 @@
     let markers = '';
     if (time != null) {
       markers += `<div class="now" style="left:${pct(time)}%"></div>`;
-      if (preview) { const end = time + preview.minutes, pe = +pct(end);
+      if (preview) { const end = Math.min(time + preview.minutes, E.LATEST_BED), pe = +pct(end);
         const lb = pe < 7 ? 'left:0;transform:none;' : pe > 93 ? 'left:auto;right:0;transform:none;' : '';
         markers += `<div class="ghost" style="left:${pe}%"><b style="${lb}">${fmtTime(end)}</b></div>`; }
     }
@@ -213,6 +217,7 @@
     $('wkBadge').textContent = Lx.weekend; $('wkBadge').classList.toggle('hidden', !E.isWeekend(S.day));
     $('weatherChip').querySelector('.we').textContent = WEATHER_EMOJI[S.weather]; $('weatherChip').querySelector('.wt').textContent = Lx.weather[S.weather];
     $('weatherChip').classList.toggle('hidden', S.day < 4 && S.weather === 'sun');
+    const sl = $('sleepyChip'); sl.classList.toggle('hidden', !E.sleepy(S)); sl.querySelector('.st').textContent = Lx.sleepy; sl.title = Lx.sleepyTip;
   }
   function renderTime(time) {
     const i = E.timeInfo(time); $('digital').textContent = fmtTime(time); $('partTxt').textContent = L().partOfDay[i.part]; $('partIco').textContent = PART_EMOJI[i.part];
@@ -270,7 +275,11 @@
     box.querySelector('.bar i').style.width = (100 * have / it.price) + '%'; box.querySelector('.wnum').textContent = `${S.coins} / ${it.price}`;
     box.classList.toggle('ready', S.coins >= it.price);
   }
-  function renderAvatar() { const hat = S.wardrobe.hat ? '🎩' : ''; $('avatar').innerHTML = `<span style="position:relative;display:inline-block">${S.avatar}${hat ? `<span style="position:absolute;left:50%;top:-58%;transform:translateX(-50%) rotate(-12deg);font-size:.55em">${hat}</span>` : ''}</span>`; $('nightAvatar').textContent = S.avatar; }
+  function renderAvatar() {
+    const hat = S.wardrobe.hat ? '🎩' : '', zz = E.sleepy(S) ? '<span class="zz">💤</span>' : '';
+    $('avatar').innerHTML = `<span style="position:relative;display:inline-block">${S.avatar}${hat ? `<span style="position:absolute;left:50%;top:-58%;transform:translateX(-50%) rotate(-12deg);font-size:.55em">${hat}</span>` : ''}${zz}</span>`;
+    $('avatar').classList.toggle('sleepy', E.sleepy(S)); $('nightAvatar').textContent = S.avatar;
+  }
   let shownLoc = null;
   function renderPlace() {
     if (shownLoc !== S.loc) { $('actions').scrollTop = 0; shownLoc = S.loc; }
@@ -279,9 +288,9 @@
   function renderPlaces() {
     const Lx = L();
     $('places').innerHTML = E.destinations(S).map(d => {
-      const closed = !d.here && !d.always && !d.open;
+      const closed = !d.here && (d.night || (!d.always && !d.open));
       const tag = d.here ? (d.always ? '' : `<span class="pst ${d.open ? 'open' : 'closed'}">${d.open ? Lx.open : Lx.closed}</span>`)
-        : d.closedToday ? `<span class="pst closed">${Lx.closed}</span>` : closed ? `<span class="pst closed">${fmtTime(d.opensAt)}</span>` : '';
+        : d.night ? `<span class="pst closed">🌙 ${Lx.nightLabel}</span>` : d.closedToday ? `<span class="pst closed">${Lx.closed}</span>` : closed ? `<span class="pst closed">${fmtTime(d.opensAt)}</span>` : '';
       const sub = Lx.placeSub[d.id] ? `<span class="psub">${Lx.placeSub[d.id]}</span>` : '';
       return `<div role="button" tabindex="0" class="ptile${d.here ? ' here' : ''}${closed || d.closedToday ? ' closed' : ''}" data-place="${d.id}" aria-pressed="${d.here}"><span class="pe">${d.emoji}</span><span class="pl">${Lx.places[d.id]}</span>${sub}${tag}</div>`;
     }).join('');
@@ -295,9 +304,10 @@
       if (a.id === 'bed') cls.push('wide');
       const label = a.id === 'work' ? (a.until && a.enabled ? fmt(Lx.act.work, { t: fmtTime(a.until) }) : Lx.act.workClosed) : Lx.act[a.id];
       let chips = '';
-      if (a.minutes) chips += timeDiscs(a.minutes);
+      if (a.minutes) chips += timeDiscs(a.minutes, a.extra);
       chips += effChip('🍎', a.tummy) + effChip('😊', a.happy) + effChip('🧺', a.fridge) + effChip(COIN_ICO, (a.earn || 0) - (a.cost || 0));
       if (a.id === 'work' && a.late && a.enabled) chips += `<span class="cchip spend">⏰ ${Lx.late}</span>`;
+      if (a.id === 'bed') chips += `<span class="cchip ${a.sleepShort ? 'spend' : 'free'}">😴 ${fmtH(a.sleep)}</span>`; // how long the night would be
       if (a.id === 'shop') chips = `<span class="mchip">${['food', 'clothes', 'toys'].filter(st => E.stallOpen(S, st)).map(st => ({ food: '🥕', clothes: '🧥', toys: '🧸' })[st]).join(' ')}</span>` + chips;
       const why = !a.enabled && a.why ? `<div class="why">${whyShort(a.why)}</div>` : '';
       html += `<div role="button" tabindex="0" class="${cls.join(' ')}" data-act="${a.id}" data-min="${a.enabled && a.minutes ? a.minutes : 0}" data-cat="${a.cat}" aria-disabled="${!a.enabled}"><span class="ae">${a.emoji}</span><span class="txt"><span class="al">${label}</span><span class="ac">${chips}</span>${why}</span></div>`;
@@ -364,7 +374,7 @@
     bubble(out.msgs);
     save();
     busy = false; $('app').classList.remove('busy');
-    if (out.bedtime) setTimeout(showSummary, keys.includes('late') ? 2600 : 1900);
+    if (out.bedtime) setTimeout(showSummary, keys.includes('midnight') ? 2600 : 1900);
   }
   function doAction(id, el) {
     if (busy || !S || S.phase !== 'day') return;
@@ -386,7 +396,7 @@
       const outdoors = o.mode !== 'bus';
       const warn = outdoors && S.weather === 'rain' && !S.wardrobe.raincoat ? `<span class="mchip">🌧️💧</span>` : outdoors && S.weather === 'cold' && !S.wardrobe.jacket ? `<span class="mchip">❄️🥶</span>` : '';
       const why = !o.enabled && o.why ? `<div class="why">${whyShort(o.why)}</div>` : '';
-      html += `<div role="button" tabindex="0" class="action${o.enabled ? '' : ' disabled'}" data-mode="${o.mode}" data-min="${o.enabled ? o.minutes : 0}" data-cat="travel" aria-disabled="${!o.enabled}"><span class="ae">${o.emoji}</span><span class="txt"><span class="al">${Lx.travel[o.mode]}</span><span class="ac">${timeDiscs(o.minutes)}${o.cost ? effChip(COIN_ICO, -o.cost) : `<span class="cchip free">✓</span>`}${warn}</span>${why}</span></div>`;
+      html += `<div role="button" tabindex="0" class="action${o.enabled ? '' : ' disabled'}" data-mode="${o.mode}" data-min="${o.enabled ? o.minutes : 0}" data-cat="travel" aria-disabled="${!o.enabled}"><span class="ae">${o.emoji}</span><span class="txt"><span class="al">${Lx.travel[o.mode]}</span><span class="ac">${timeDiscs(o.minutes, o.extra)}${o.cost ? effChip(COIN_ICO, -o.cost) : `<span class="cchip free">✓</span>`}${warn}</span>${why}</span></div>`;
     });
     $('travelModes').innerHTML = html;
     $('travelSheet').classList.add('open'); SFX.open();
@@ -433,9 +443,13 @@
     if (!S || S.phase !== 'summary') return;
     const sum = E.summary(S); const Lx = L();
     $('sumTitle').textContent = fmt(Lx.summary.title, { n: sum.day });
-    renderDayBar($('sumBar'), sum.timeline, null, E.routine(S));
+    renderDayBar($('sumBar'), sum.timeline, null, E.routine(S), null, sum.bedAt);
     const order = ['work', 'travel', 'eat', 'play', 'shop', 'wait', 'sleep'];
     $('sumLegend').innerHTML = order.filter(c => sum.byCat[c]).map(c => `<div${c === 'sleep' ? ' class="wide"' : ''}><span class="sw" style="background:${E.CAT_COLORS[c]}"></span><span>${Lx.cats[c]}</span>${timeDiscs(sum.byCat[c])}</div>`).join('');
+    // the night ahead: how long, and whether tomorrow will be a sleepy day
+    const sd = Lx.time.sayDur, verdict = sum.short ? fmt(Lx.summary.short, { d: sd(sum.short) }) : sum.owedAfter ? fmt(Lx.summary.stillOwed, { d: sd(sum.owedAfter) }) : sum.wasOwed ? Lx.summary.caughtUp : Lx.summary.rested;
+    const ss = $('sumSleep'); ss.classList.toggle('bad', sum.sleepyTomorrow);
+    ss.innerHTML = `<span class="fe">${sum.sleepyTomorrow ? '🥱' : '😴'}</span><span class="ft"><b>${fmt(Lx.summary.sleep, { d: sd(sum.slept) })}</b><br>${verdict}</span>`;
     $('sumEarned').innerHTML = `<span class="coin lg"></span>+${sum.earned}`; $('sumSpent').innerHTML = `<span class="coin lg"></span>−${sum.spent}`;
     $('sumKept').innerHTML = `<span class="coin lg"></span>${sum.kept >= 0 ? '+' : '−'}${Math.abs(sum.kept)}`; $('sumWallet').textContent = sum.wallet;
     const f = $('sumForecast'); f.classList.toggle('hidden', !sum.showForecast);
@@ -447,7 +461,7 @@
     if (!E.goToSleep(S)) return;
     save(); $('summary').classList.remove('open');
     const night = $('night'); night.classList.add('open');
-    $('nightClock').innerHTML = clockSVG('n'); setClock('n', absMin(S.day, E.BEDTIME), false);
+    $('nightClock').innerHTML = clockSVG('n'); setClock('n', absMin(S.day, S.bedAt == null ? E.BEDTIME : S.bedAt), false);
     SFX.sleep(); speak(t('night'));
     setTimeout(() => { const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches; ['nHour', 'nMin'].forEach(id => $(id).style.transition = `transform ${reduce ? .8 : 4.2}s cubic-bezier(.4,0,.2,1)`); setClock('n', absMin(S.day + 1, E.DAY_START), true); }, 350);
     setTimeout(() => {
@@ -471,10 +485,11 @@
     $('btnContinue').classList.toggle('hidden', !hasSave); $('btnPlay').classList.toggle('hidden', hasSave); $('btnNew').classList.toggle('hidden', !hasSave); $('newConfirm').classList.add('hidden');
     $('app').dataset.screen = 'start';
   }
-  function migrate(s) { // older saves (v1: hourly work + car wash; v2: happy max 6, fridge max 12)
+  function migrate(s) { // older saves (v1: hourly work + car wash; v2: happy max 6, fridge max 12; v3: fixed 21:00 bedtime)
     if (s.v < 2) { s.lunchbox = s.lunchbox || 0; delete s.carwash; s.lastBand = s.lastBand || 'breakfast'; if (s.phase === 'day' && s.time >= E.BEDTIME) s.phase = 'summary'; }
     if (s.v < 3) { s.happy = Math.min(E.HAPPY_MAX, (s.happy || 0) + 2); }
-    s.v = 3;
+    if (s.v < 4) { s.owed = 0; s.slept = 10 * 60; s.bedAt = s.phase === 'day' ? null : Math.min(Math.max(s.time || E.BEDTIME, E.BEDTIME), E.LATEST_BED); }
+    s.v = 4;
     return s;
   }
   function startGame(fresh) {
@@ -501,7 +516,8 @@
     if (b.id === 'btnNewYes') { SFX.tap(); startGame(true); return; }
     if (b.id === 'btnNewNo') { SFX.tap(); $('newConfirm').classList.add('hidden'); $('btnNew').classList.remove('hidden'); $('btnContinue').classList.remove('hidden'); return; }
     if (b.dataset.act) { doAction(b.dataset.act, b); return; }
-    if (b.dataset.place) { if (busy || !S || S.phase !== 'day') return; SFX.tap(); if (b.dataset.place === S.loc) { bubble([{ key: 'arrived', place: S.loc }]); return; } openTravelTo(b.dataset.place); return; }
+    if (b.dataset.place) { if (busy || !S || S.phase !== 'day') return; SFX.tap(); if (b.dataset.place === S.loc) { bubble([{ key: 'arrived', place: S.loc }]); return; }
+      if (E.isNight(S)) { bubble([{ key: 'nightStayHome' }]); SFX.sad(); return; } openTravelTo(b.dataset.place); return; }
     if (b.dataset.band) { SFX.tap(); const band = E.routine(S).find(x => x.id === b.dataset.band); if (band) { const Lx = L(); const a = sayTime(band.from * 60), bb = sayTime((band.to % 24) * 60); speak(fmt(Lx.planSay, { a, b: bb, what: Lx.plan[band.id] })); toast(`${band.emoji} ${Lx.plan[band.id]}`); } return; }
     if (b.dataset.mode) { if (busy) return; SFX.tap(); doTravel(b.dataset.mode, b); return; }
     if (b.dataset.stall) { SFX.tap(); stall = b.dataset.stall; document.querySelectorAll('#stallTabs button').forEach(x => x.setAttribute('aria-selected', x.dataset.stall === stall)); renderStall(); return; }

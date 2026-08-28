@@ -1,6 +1,11 @@
 /* ===== TimeSpent — game engine (no DOM) ===== */
 const TSEngine = (() => {
-  const DAY_START = 7 * 60, BEDTIME = 21 * 60, BED_ALLOWED = 19 * 60, STEP = 30, SLOTS = (BEDTIME - DAY_START) / STEP;
+  const DAY_START = 7 * 60, BEDTIME = 21 * 60, BED_ALLOWED = 19 * 60, LATEST_BED = 24 * 60, STEP = 30;
+  const SLOTS = (LATEST_BED - DAY_START) / STEP; // half-hours that can be filled: 7:00 → midnight
+  // Sleep: bedtime is 21:00, but you may stay up (at home) until midnight, when you fall asleep on the spot. Waking is always 7:00.
+  // Fewer than SLEEP_NEED hours makes tomorrow a sleepy day: travel, play and shopping take SLEEPY_EXTRA minutes longer
+  // (eating, resting and the fixed work shifts don't). The missing hours are owed: tonight you need 8 h + what you owe.
+  const SLEEP_NEED = 8 * 60, SLEEPY_EXTRA = 30, SLOW_CATS = ['travel', 'play', 'shop'], LAST_CALL = 23 * 60;
   const TUMMY_MAX = 6, HAPPY_MAX = 10, WAKE_TUMMY = 2, WAKE_HAPPY = 7, HUNGER_PER_STEP = 0.25, WORK_PAY = 1 /* per hour */, WORK_HAPPY = -0.5 /* per hour */;
   const LATE_COINS = 1, LATE_HAPPY = 1; // arriving after the shift start: one coin less and a bit sad
   const SHIFTS = [{ start: 9 * 60, end: 13 * 60 }, { start: 13 * 60 + 30, end: 17 * 60 + 30 }];
@@ -83,7 +88,7 @@ const TSEngine = (() => {
 
   function newGame(avatar, seed) {
     return {
-      v: 3, avatar: avatar || '🐻', seed: seed || 12345,
+      v: 4, avatar: avatar || '🐻', seed: seed || 12345,
       day: 1, time: DAY_START, coins: 2, loc: 'home',
       tummy: 3, happy: 7, fridge: 5, lunchbox: 0,
       wardrobe: {}, toys: [], wish: null, wishReadyTold: false,
@@ -91,15 +96,29 @@ const TSEngine = (() => {
       timeline: [], today: freshToday(),
       flags: {}, phase: 'day', msgs: [], lastBand: 'breakfast',
       totals: { earned: 0, spent: 0 },
+      owed: 0, slept: 10 * 60, bedAt: null, // sleep minutes still owed, minutes slept last night, when we went to bed today
     };
   }
   const freshToday = () => ({ earned: 0, spent: 0 });
 
   function timeInfo(t) {
     const h = Math.floor(t / 60) % 24, m = t % 60;
-    const part = h < 12 ? 'morning' : h < 18 ? 'afternoon' : h < 21 ? 'evening' : 'night';
+    const part = h >= 21 || h < 7 ? 'night' : h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening';
     return { h, m, part, h12: h % 12 === 0 ? 12 : h % 12 };
   }
+
+  // ---- sleep ----
+  const sleepy = (state) => (state.owed || 0) > 0;
+  const slowedBy = (state, cat) => sleepy(state) && SLOW_CATS.includes(cat) ? SLEEPY_EXTRA : 0;
+  // What a night starting at bedAt does: minutes slept, minutes needed (8 h + what is owed), what stays owed.
+  function nightMath(state, bedAt) {
+    const slept = DAY_START + 24 * 60 - bedAt;
+    const need = SLEEP_NEED + (state.owed || 0);
+    return { slept, need, owedAfter: Math.max(0, need - slept), short: Math.max(0, SLEEP_NEED - slept) };
+  }
+  // Latest bedtime tonight that clears what is owed (never later than the usual 21:00, never earlier than 19:00).
+  const bedByTonight = (owed) => clamp(DAY_START + 24 * 60 - (SLEEP_NEED + owed), BED_ALLOWED, BEDTIME);
+  const sleepIfBedNow = (state) => nightMath(state, Math.min(state.time, LATEST_BED));
 
   function isOpen(state, place, at) {
     const p = PLACES[place]; const t = at == null ? state.time : at;
@@ -117,6 +136,7 @@ const TSEngine = (() => {
   function advance(state, minutes, cat, out) {
     const from = state.time;
     for (let i = 0; i < minutes / STEP; i++) {
+      if (state.time >= LATEST_BED) break; // midnight: whatever we were doing, we fall asleep
       const slot = (state.time - DAY_START) / STEP;
       if (slot >= 0 && slot < SLOTS) state.timeline[slot] = cat;
       state.time += STEP;
@@ -125,7 +145,7 @@ const TSEngine = (() => {
     out.steps.push({ cat, from, to: state.time });
   }
   function needHints(state, out) {
-    if (state.time >= BEDTIME) return; // bedtime message takes over
+    if (state.time >= BEDTIME && !state.flags.hBedtime) return; // the bedtime message takes over this once
     let hinted = false;
     if (state.tummy <= 0 && !state.flags.hStarving) { out.msgs.push({ key: 'starving' }); state.flags.hStarving = true; hinted = true; }
     else if (state.tummy <= 1 && state.tummy > 0 && !state.flags.hHungry) { out.msgs.push({ key: 'hungry' }); state.flags.hHungry = true; hinted = true; }
@@ -140,12 +160,24 @@ const TSEngine = (() => {
   function pay(state, n, out) { state.coins -= n; state.today.spent += n; state.totals.spent += n; out.coins -= n; }
   function earn(state, n, out) { if (!n) return; state.coins += n; state.today.earned += n; state.totals.earned += n; out.coins += n; }
 
+  function fallAsleep(state, out, key) { // the day is over
+    out.msgs = out.msgs.filter(m => m.key !== 'rested');
+    out.msgs.push({ key });
+    state.bedAt = Math.min(state.time, LATEST_BED); state.phase = 'summary'; out.bedtime = true;
+  }
   function checkBedtime(state, out) {
-    if (state.time >= BEDTIME && state.phase === 'day') {
+    if (state.phase !== 'day') return;
+    if (state.time >= BEDTIME && !state.flags.hBedtime) { // 21:00: bedtime, but staying up is allowed (at home)
+      state.flags.hBedtime = true;
       out.msgs = out.msgs.filter(m => m.key !== 'rested');
-      if (state.loc !== 'home') { out.msgs.push({ key: 'late' }); advance(state, 60, 'travel', out); state.loc = 'home'; }
+      if (state.loc !== 'home') { out.msgs.push({ key: 'late' }); advance(state, TRAVEL.walk.min + slowedBy(state, 'travel'), 'travel', out); state.loc = 'home'; }
       else out.msgs.push({ key: 'bedtime' });
-      state.phase = 'summary'; out.bedtime = true;
+    }
+    if (state.time >= LATEST_BED) { fallAsleep(state, out, 'midnight'); return; }
+    if (state.time >= LAST_CALL && !state.flags.hLastCall) { // 23:00: bed now, or tomorrow is a sleepy day
+      state.flags.hLastCall = true;
+      out.msgs = out.msgs.filter(m => m.key !== 'rested');
+      out.msgs.push({ key: 'lastCall' });
     }
   }
 
@@ -156,12 +188,16 @@ const TSEngine = (() => {
     const closedMsg = () => PLACES[s.loc].weekdaysOnly && wk ? { key: 'closedToday', place: s.loc } : { key: 'closed', place: s.loc, t: PLACES[s.loc].open };
     const hungryBlock = s.tummy <= 0 ? { key: 'starving' } : null;
     const sadBlock = s.happy <= 0 ? { key: 'tooSad' } : null;
-    const add = (a) => { list.push(Object.assign({ enabled: true, cost: 0, earn: 0, minutes: 0, tummy: 0, happy: 0, fridge: 0 }, a)); };
-    const lunchBreak = s.time >= LUNCH_FROM && s.time < LUNCH_TO;
+    const add = (a) => {
+      const x = Object.assign({ enabled: true, cost: 0, earn: 0, minutes: 0, tummy: 0, happy: 0, fridge: 0, extra: 0 }, a);
+      if (x.minutes && x.id !== 'work') { x.extra = slowedBy(s, x.cat); x.minutes += x.extra; } // sleepy: slower at some things
+      list.push(x);
+    };
+    const lunchBreak = s.time >= LUNCH_FROM && s.time < LUNCH_TO, night = s.time >= BEDTIME;
 
     if (s.loc === 'home') {
       add({ id: 'cook', emoji: '🍳', cat: 'eat', minutes: 30, tummy: 4, happy: 1, fridge: -1, enabled: s.fridge > 0, why: s.fridge > 0 ? null : { key: 'noMeals' } });
-      if (!wk && !s.lunchbox) add({ id: 'pack', emoji: '🍱', cat: 'eat', minutes: 30, fridge: -1, enabled: s.fridge > 0, why: s.fridge > 0 ? null : { key: 'noMeals' } });
+      if (!wk && !s.lunchbox && !night) add({ id: 'pack', emoji: '🍱', cat: 'eat', minutes: 30, fridge: -1, enabled: s.fridge > 0, why: s.fridge > 0 ? null : { key: 'noMeals' } });
       if (s.toys.length) add({ id: 'toy', emoji: ITEMS[s.toys[s.toys.length - 1]].emoji, cat: 'play', minutes: 60, happy: 2, enabled: !hungryBlock, why: hungryBlock });
       else if (s.day >= STALL_UNLOCK.toys) add({ id: 'toy', emoji: '🧸', cat: 'play', minutes: 60, happy: 2, enabled: false, why: { key: 'noToy' } });
     }
@@ -191,7 +227,10 @@ const TSEngine = (() => {
       if (s.day >= SHOW_UNLOCK) add({ id: 'show', emoji: '🎭', cat: 'play', minutes: 60, cost: 2, happy: 4, enabled: s.coins >= 2, why: { key: 'notEnough', n: 2 - s.coins } });
     }
     add({ id: 'rest', emoji: '😌', cat: 'wait', minutes: 30, happy: 1 });
-    if (s.loc === 'home') add({ id: 'bed', emoji: '🛏️', cat: 'sleep', enabled: s.time >= BED_ALLOWED, hidden: s.time < BED_ALLOWED });
+    if (s.loc === 'home') {
+      const n = sleepIfBedNow(s); // the bed card shows how long the night would be
+      add({ id: 'bed', emoji: '🛏️', cat: 'sleep', enabled: s.time >= BED_ALLOWED, hidden: s.time < BED_ALLOWED, sleep: n.slept, sleepShort: n.owedAfter > 0 });
+    }
     return list.filter(a => !a.hidden);
   }
 
@@ -201,27 +240,29 @@ const TSEngine = (() => {
     const a = actions(state).find(x => x.id === id);
     if (!a || !a.enabled) { if (a && a.why) out.msgs.push(a.why); return out; }
     out.ok = true;
+    const go = (cat) => advance(state, a.minutes, cat, out); // a.minutes already includes the sleepy extra
     switch (id) {
-      case 'cook': state.fridge -= 1; advance(state, 30, 'eat', out); ate(state, 4); cheer(state, 1); out.msgs.push({ key: 'ate' }); break;
-      case 'pack': state.fridge -= 1; state.lunchbox = 1; advance(state, 30, 'eat', out); out.msgs.push({ key: 'packed' }); break;
-      case 'lunchbox': state.lunchbox = 0; advance(state, 30, 'eat', out); ate(state, 4); cheer(state, 1); out.msgs.push({ key: 'lunchbox' }); break;
-      case 'cafe': pay(state, 2, out); advance(state, 30, 'eat', out); ate(state, 4); cheer(state, 1); out.msgs.push({ key: 'cafe' }); break;
-      case 'toy': advance(state, 60, 'play', out); cheer(state, 2); out.msgs.push({ key: 'played' }); break;
+      case 'cook': state.fridge -= 1; go('eat'); ate(state, 4); cheer(state, 1); out.msgs.push({ key: 'ate' }); break;
+      case 'pack': state.fridge -= 1; state.lunchbox = 1; go('eat'); out.msgs.push({ key: 'packed' }); break;
+      case 'lunchbox': state.lunchbox = 0; go('eat'); ate(state, 4); cheer(state, 1); out.msgs.push({ key: 'lunchbox' }); break;
+      case 'cafe': pay(state, 2, out); go('eat'); ate(state, 4); cheer(state, 1); out.msgs.push({ key: 'cafe' }); break;
+      case 'toy': go('play'); cheer(state, 2); out.msgs.push({ key: 'played' }); break;
       case 'work': {
         const late = a.late, minutes = a.minutes;
         advance(state, minutes, 'work', out); earn(state, a.earn, out); cheer(state, a.happy);
         out.msgs.push({ key: state.flags.firstWork ? 'worked' : 'workedFirst', d: minutes, n: a.earn, k: Math.round(minutes / 60), t: a.until });
-        if (late) out.msgs.push({ key: 'wasLate' });
+        if (late) out.msgs.push({ key: sleepy(state) ? 'wasLateSleepy' : 'wasLate' });
         state.flags.firstWork = true; break;
       }
-      case 'restaurant': pay(state, 2, out); advance(state, 30, 'eat', out); ate(state, 4); cheer(state, 1); out.msgs.push({ key: 'ate' }); break;
-      case 'play': advance(state, 60, 'play', out); cheer(state, 3); out.msgs.push({ key: 'played' }); break;
-      case 'icecream': pay(state, 1, out); advance(state, 30, 'eat', out); ate(state, 1); cheer(state, 1); out.msgs.push({ key: 'icecream' }); break;
-      case 'show': pay(state, 2, out); advance(state, 60, 'play', out); cheer(state, 4); out.msgs.push({ key: 'show' }); break;
-      case 'rest': advance(state, 30, 'wait', out); cheer(state, 1); out.msgs.push({ key: 'rested', t: state.time }); break;
-      case 'bed': out.msgs.push({ key: 'goBed' }); state.phase = 'summary'; out.bedtime = true; return out;
+      case 'restaurant': pay(state, 2, out); go('eat'); ate(state, 4); cheer(state, 1); out.msgs.push({ key: 'ate' }); break;
+      case 'play': go('play'); cheer(state, 3); out.msgs.push({ key: 'played' }); break;
+      case 'icecream': pay(state, 1, out); go('eat'); ate(state, 1); cheer(state, 1); out.msgs.push({ key: 'icecream' }); break;
+      case 'show': pay(state, 2, out); go('play'); cheer(state, 4); out.msgs.push({ key: 'show' }); break;
+      case 'rest': go('wait'); cheer(state, 1); out.msgs.push({ key: 'rested', t: state.time }); break;
+      case 'bed': fallAsleep(state, out, a.sleepShort ? 'goBedLate' : 'goBed'); return out;
       default: out.ok = false; return out;
     }
+    if (a.extra && !state.flags.hSlowTold) { state.flags.hSlowTold = true; out.msgs.push({ key: 'slowToday' }); } // first slow thing of a sleepy day
     needHints(state, out);
     planHint(state, out);
     checkBedtime(state, out);
@@ -229,21 +270,25 @@ const TSEngine = (() => {
   }
 
   function travelOptions(state, dest) {
+    const extra = slowedBy(state, 'travel');
     return Object.keys(TRAVEL).map(mode => {
       const t = TRAVEL[mode];
       const owned = !t.needs || state.toys.includes(t.needs);
-      return { mode, emoji: t.emoji, minutes: t.min, cost: t.cost, enabled: owned && state.coins >= t.cost, hidden: !owned, why: state.coins < t.cost ? { key: 'notEnough', n: t.cost - state.coins } : null };
+      return { mode, emoji: t.emoji, minutes: t.min + extra, extra, cost: t.cost, enabled: owned && state.coins >= t.cost, hidden: !owned, why: state.coins < t.cost ? { key: 'notEnough', n: t.cost - state.coins } : null };
     }).filter(o => !o.hidden);
   }
+  const isNight = (state) => state.time >= BEDTIME; // after 21:00 we stay home
   function destinations(state) {
+    const night = isNight(state);
     return Object.keys(PLACES).filter(p => unlocked(state, p)).map(p => ({
-      id: p, emoji: PLACES[p].emoji, here: p === state.loc, open: isOpen(state, p),
+      id: p, emoji: PLACES[p].emoji, here: p === state.loc, open: isOpen(state, p), night: night && p !== 'home',
       opensAt: PLACES[p].open, closedToday: PLACES[p].weekdaysOnly && isWeekend(state.day), always: PLACES[p].open == null,
     }));
   }
   function travel(state, dest, mode) {
     const out = { ok: false, msgs: [], steps: [], coins: 0, bedtime: false };
     if (state.phase !== 'day' || dest === state.loc || !unlocked(state, dest)) return out;
+    if (isNight(state)) { out.msgs.push({ key: 'nightStayHome' }); return out; }
     const opt = travelOptions(state).find(o => o.mode === mode);
     if (!opt || !opt.enabled) { if (opt && opt.why) out.msgs.push(opt.why); return out; }
     out.ok = true;
@@ -256,6 +301,7 @@ const TSEngine = (() => {
       if (state.weather === 'cold' && !state.wardrobe.jacket) { cheer(state, -2); out.msgs.push({ key: 'cold' }); }
     }
     if (mode === 'bike' && !state.flags.bikeTold) { out.msgs.push({ key: 'bikeTravel' }); state.flags.bikeTold = true; }
+    if (opt.extra && !state.flags.hSlowTold) { state.flags.hSlowTold = true; out.msgs.push({ key: 'slowToday' }); }
     needHints(state, out);
     planHint(state, out);
     checkBedtime(state, out);
@@ -301,10 +347,12 @@ const TSEngine = (() => {
   // ---- day / night ----
   function summary(state) {
     const byCat = {}; state.timeline.forEach(c => { if (c) byCat[c] = (byCat[c] || 0) + STEP; });
-    byCat.sleep = (24 * 60) - (BEDTIME - DAY_START);
+    const bedAt = state.bedAt == null ? BEDTIME : state.bedAt, n = nightMath(state, bedAt);
+    byCat.sleep = n.slept;
     return { day: state.day, weekday: weekday(state.day), earned: state.today.earned, spent: state.today.spent,
              kept: state.today.earned - state.today.spent, wallet: state.coins, byCat, forecast: state.forecast,
-             timeline: state.timeline.slice(0, SLOTS), showForecast: state.day + 1 >= WEATHER_FROM };
+             timeline: state.timeline.slice(0, SLOTS), showForecast: state.day + 1 >= WEATHER_FROM,
+             bedAt, slept: n.slept, short: n.short, owedAfter: n.owedAfter, sleepyTomorrow: n.owedAfter > 0, wasOwed: (state.owed || 0) > 0 };
   }
   function rollForecast(state) {
     if (state.day + 1 < WEATHER_FROM) return 'sun';
@@ -313,17 +361,25 @@ const TSEngine = (() => {
   }
   function goToSleep(state) { // summary -> night
     if (state.phase !== 'summary') return false;
+    if (state.bedAt == null) state.bedAt = Math.min(Math.max(state.time, BEDTIME), LATEST_BED);
+    const n = nightMath(state, state.bedAt);
+    state.flags.wasSleepy = sleepy(state); // so the morning can say "not sleepy any more"
+    state.slept = n.slept; state.owed = n.owedAfter;
     state.forecast = rollForecast(state);
     state.phase = 'night'; return true;
   }
   function wakeUp(state) { // night -> new day
     if (state.phase !== 'night') return null;
+    const wasSleepy = !!state.flags.wasSleepy;
     state.day += 1; state.time = DAY_START; state.loc = 'home';
     state.tummy = WAKE_TUMMY; state.happy = clamp(Math.max(WAKE_HAPPY, state.happy), 0, HAPPY_MAX);
-    state.weather = state.forecast; state.timeline = []; state.today = freshToday(); state.lunchbox = 0;
+    state.weather = state.forecast; state.timeline = []; state.today = freshToday(); state.lunchbox = 0; state.bedAt = null;
     state.flags.hHungry = state.flags.hStarving = state.flags.hBored = state.flags.hSad = false;
+    state.flags.hBedtime = state.flags.hLastCall = state.flags.hSlowTold = false;
     state.phase = 'day';
     const msgs = [{ key: 'morning', day: state.day }];
+    if (sleepy(state)) msgs.push({ key: 'sleepyMorning', d: state.slept, t: bedByTonight(state.owed) });
+    else if (wasSleepy) msgs.push({ key: 'restedMorning', d: state.slept });
     if (isWeekend(state.day)) msgs.push({ key: 'weekendMorning' });
     if (state.day === PLACES.park.unlockDay) msgs.push({ key: 'newPark' });
     if (state.day === STALL_UNLOCK.toys) msgs.push({ key: 'newToys' });
@@ -334,8 +390,8 @@ const TSEngine = (() => {
     return msgs;
   }
 
-  return { DAY_START, BEDTIME, STEP, SLOTS, TUMMY_MAX, HAPPY_MAX, PLACES, TRAVEL, ITEMS, CAT_COLORS, STALL_UNLOCK, FRIDGE_MAX, LUNCH_FROM, LUNCH_TO, WORK_PAY, SHIFTS, HUNGER_PER_STEP,
+  return { DAY_START, BEDTIME, BED_ALLOWED, LATEST_BED, LAST_CALL, SLEEP_NEED, SLEEPY_EXTRA, SLOW_CATS, STEP, SLOTS, TUMMY_MAX, HAPPY_MAX, PLACES, TRAVEL, ITEMS, CAT_COLORS, STALL_UNLOCK, FRIDGE_MAX, LUNCH_FROM, LUNCH_TO, WORK_PAY, SHIFTS, HUNGER_PER_STEP,
            newGame, timeInfo, isOpen, isWeekend, weekday, unlocked, stallOpen, actions, perform, travelOptions, destinations,
-           travel, catalogue, buy, setWish, summary, goToSleep, wakeUp, routine, bandAt, shiftAt };
+           travel, catalogue, buy, setWish, summary, goToSleep, wakeUp, routine, bandAt, shiftAt, sleepy, slowedBy, nightMath, bedByTonight, isNight };
 })();
 if (typeof module !== 'undefined') module.exports = TSEngine;

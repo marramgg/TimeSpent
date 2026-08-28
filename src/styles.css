@@ -328,6 +328,17 @@ svg { display: block; }
 .legend .tchips svg { width: 16px; height: 16px; }
 .forecast { display: flex; align-items: center; justify-content: center; gap: .5em; font-family: var(--font-display); font-weight: 600; font-size: 1.15em; background: var(--paper-2); border: var(--line) solid var(--ink-line); border-radius: 16px; padding: 8px; }
 .forecast .fe { font-size: 1.6em; }
+/* sleep line in the summary: how long the night is, and whether tomorrow is a sleepy day */
+.sumsleep { font-size: 1em; text-align: left; justify-content: flex-start; }
+.sumsleep .ft { line-height: 1.25; } .sumsleep .ft b { font-family: var(--font-display); font-weight: 700; }
+.sumsleep.bad { background: #EFE3FF; border-color: #6B4FB3; color: #3C2A78; }
+/* sleepy day: chip in the top bar, 💤 on the avatar, purple discs on the slowed cards, "late" hours on the day bar */
+.sleepychip { background: #EFE3FF; border-color: #6B4FB3; color: #3C2A78; }
+.avatar { position: relative; }
+.avatar.sleepy { background: #EFE3FF; }
+.avatar .zz { position: absolute; right: -.55em; top: -.5em; font-size: .5em; animation: floatz 1.5s ease-in-out infinite; }
+.tchips .slowz { font-size: 12px; line-height: 1; margin-left: 2px; }
+.daybar .cells .c.late { background: #D9D1E8; border-color: rgba(51,36,26,.3); }
 
 .night-screen { background: var(--night); }
 .night-screen .scrim { background: transparent; }

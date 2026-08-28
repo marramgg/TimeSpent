@@ -92,4 +92,50 @@ const s = runDays(sensiblePolicy, 21, 7, true);
 console.log('final coins', s.coins, 'toys', s.toys, 'wardrobe', s.wardrobe, 'totals', s.totals);
 console.log('--- save/load roundtrip');
 const copy = JSON.parse(JSON.stringify(s)); assert(E.actions(copy).length > 0, 'actions after reload', copy);
+
+console.log('--- sleep: night owl (never goes to bed) vs early bird');
+{ // staying up: the day ends at midnight, 7 h of sleep, and every extra late night adds to what is owed
+  const nightOwl = (st, enabled) => { const a = enabled.filter(x => x.id !== 'bed' && !x.sheet); return { type: 'act', id: a[0].id }; };
+  const o = runDays(nightOwl, 3, 11, false);
+  // runDays leaves us on the morning of day 4 after three midnights: owed grows 1 h, 2 h, 3 h
+  assert(o.owed === 3 * 60, 'owed after three midnights should be 3 h', { owed: o.owed });
+  assert(o.slept === 7 * 60, 'a midnight bedtime sleeps 7 h', { slept: o.slept });
+  assert(E.sleepy(o), 'should be sleepy', o);
+  const walk = E.travelOptions(o).find(t => t.mode === 'walk'); assert(walk.minutes === 90 && walk.extra === 30, 'sleepy walk takes 90 min', walk);
+  const cook = E.actions(o).find(a => a.id === 'cook'); assert(cook.minutes === 30, 'eating is not slowed', cook);
+  const rest = E.actions(o).find(a => a.id === 'rest'); assert(rest.minutes === 30, 'resting is not slowed', rest);
+  assert(E.bedByTonight(o.owed) === 20 * 60, 'owing 3 h means bed by 20:00', { bedBy: E.bedByTonight(o.owed) });
+  // sleepy morning: breakfast, lunchbox, walk -> late for the 9:00 shift; the bus would have been on time
+  o.fridge = 5; o.coins = 5; o.tummy = 3; o.happy = 7;
+  assert(E.perform(o, 'cook').ok && E.perform(o, 'pack').ok && E.travel(o, 'bakery', 'walk').ok, 'morning routine', o);
+  assert(o.time === 9 * 60 + 30, 'sleepy walk arrives at 9:30', { time: o.time });
+  const w = E.actions(o).find(a => a.id === 'work'); assert(w.late && w.earn === 3, 'late shift pays 3', w);
+  // night: 21:00 nudge, 23:00 last call, midnight forced sleep, and nothing opens at night
+  E.perform(o, 'work'); E.perform(o, 'lunchbox'); E.perform(o, 'work'); E.travel(o, 'home', 'bus'); // 17:30 + slow bus (60) = 18:30
+  assert(o.time === 18 * 60 + 30, 'slow bus home arrives 18:30', { time: o.time });
+  let keys = [];
+  while (o.phase === 'day') keys = keys.concat(E.perform(o, 'rest').msgs.map(m => m.key));
+  assert(keys.includes('bedtime') && keys.includes('lastCall') && keys.includes('midnight'), 'night messages', keys);
+  assert(o.bedAt === 24 * 60 && o.phase === 'summary', 'asleep at midnight', { bedAt: o.bedAt, phase: o.phase });
+  const sum = E.summary(o); assert(sum.slept === 7 * 60 && sum.owedAfter === 4 * 60 && sum.sleepyTomorrow, 'summary counts the debt', sum);
+}
+{ // an early night clears the debt: 2 h owed + 21:00 bedtime (10 h) -> rested
+  const e = E.newGame('🦊', 5); e.owed = 120;
+  let out; while (e.phase === 'day' && e.time < E.BEDTIME) out = E.perform(e, 'rest');
+  assert(E.perform(e, 'bed').ok, 'bed at 21:00', e);
+  assert(E.summary(e).owedAfter === 0, 'debt cleared by a 10 h night', E.summary(e));
+  E.goToSleep(e); const m = E.wakeUp(e);
+  assert(!E.sleepy(e) && m.some(x => x.key === 'restedMorning'), 'rested morning', m);
+  assert(E.travelOptions(e).find(t => t.mode === 'walk').minutes === 60, 'walk back to 60 min', e);
+}
+{ // out at 21:00: sent home (walk), can still stay up; travel is refused at night; an action that would cross midnight is cut short
+  const p = E.newGame('🐰', 8); p.day = 2; p.loc = 'park'; p.time = 20 * 60 + 30; p.toys = ['ball'];
+  const out = E.perform(p, 'play'); // 20:30 -> 21:30 at the park -> walked home by 22:30
+  assert(out.msgs.some(m => m.key === 'late') && p.loc === 'home' && p.time === 22 * 60 + 30 && p.phase === 'day', 'sent home at 21:00 but still awake', p);
+  assert(!E.travel(p, 'park', 'walk').ok, 'no travelling at night', p);
+  assert(E.destinations(p).find(d => d.id === 'park').night, 'park shows as night', E.destinations(p));
+  p.time = 23 * 60 + 30; const toy = E.perform(p, 'toy'); // 60 min, but midnight comes first
+  assert(p.time === 24 * 60 && p.phase === 'summary' && toy.msgs.some(m => m.key === 'midnight'), 'play cut short at midnight', p);
+}
+console.log('ok');
 console.log('ALL OK');
