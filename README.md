@@ -2,7 +2,7 @@
 
 This app is a vibecoded attempt to help my son have a better understanding of time and other resources like food and money.
 
-It's a turn-based day game for a 5-year-old: one turn is one day, from 7:00 to bedtime at 21:00. **Time** is shown on an analog clock, a sun moving across the sky and a 24-hour bar with the day's plan under it (hover or press a card to preview how long it takes). **Money**: one hour of work is one coin, two shifts a day, arriving late costs a coin, no work at weekends. Food, transport, clothes and toys cost coins, and there's a wish to save up for. Lunch is a free lunchbox packed at home or a paid café meal. English and European Portuguese, everything read aloud. The rules fit on one page: [GAME-DESIGN.md](GAME-DESIGN.md).
+It's a turn-based day game for a 5-year-old: one turn is one day, from 7:00 to bedtime at 21:00 (staying up is allowed until midnight, but fewer than 8 hours of sleep makes the next day slow — going places, playing and shopping take half an hour longer, and the missing sleep has to be caught up). **Time** is shown on an analog clock, a sun moving across the sky and a 24-hour bar with the day's plan under it (hover or press a card to preview how long it takes). **Money**: one hour of work is one coin, two shifts a day, arriving late costs a coin, no work at weekends. Food, transport, clothes and toys cost coins, and there's a wish to save up for. Lunch is a free lunchbox packed at home or a paid café meal. English and European Portuguese, everything read aloud. The rules fit on one page: [GAME-DESIGN.md](GAME-DESIGN.md).
 
 ## Play it
 
@@ -22,12 +22,13 @@ Sources live in `src/`; `python3 build.py` rebuilds `dist/index.html` (copy it t
 | `src/ui.js` | Rendering, animations, sounds, speech, saving. |
 | `src/styles.css`, `src/markup.html` | Look and layout. |
 
-Balance knobs are at the top of `engine.js` (`WORK_PAY`, `ITEMS` prices, `STALL_UNLOCK`, `WEATHER_FROM`, opening hours).
+Balance knobs are at the top of `engine.js` (`WORK_PAY`, `ITEMS` prices, `STALL_UNLOCK`, `WEATHER_FROM`, opening hours, and the sleep rules: `LATEST_BED`, `SLEEP_NEED`, `SLEEPY_EXTRA`, `SLOW_CATS`).
 
 ## Test
 
 - `node test/sim.js` — simulates 21+ days with random and sensible play; fails if the child could ever get stuck.
 - `node test/shots.js` / `node test/ui-play.js` — Playwright screenshots and a scripted 9-day playthrough at iPhone/iPad sizes (needs `npm i playwright`).
+- `node test/sleep-play.js` — Playwright: a late night, the forced midnight sleep, a sleepy (slow) morning, recovery, and an old save migrating.
 - `node test/start-shots.js` — checks the start screen fits without scrolling at iPhone/iPad sizes in every state (fresh, saved game, "new game?" confirm), with the real fonts if `npm i @fontsource/nunito @fontsource/fredoka` was run.
 
 See `GAME-DESIGN.md` for the rules in one page.

@@ -1,14 +1,14 @@
-# TimeSpent — game design (v3)
+# TimeSpent — game design (v4)
 
-A day is one turn. Wake at 7:00, bedtime at 21:00 (at 21:00 nothing else is possible). Every action costs time (clock, sun and the 24 h bar move) and many cost or earn coins. Hovering or pressing a card previews everything it would change: the time on the day bar (dashed marker = finish time) and the four state cells — Tummy, Happy, Food and Coins — showing gains hatched and losses pulsing red.
+A day is one turn. Wake at 7:00, bedtime at 21:00 — but you may stay up at home until midnight, and a short night makes the next day slow (see Sleep). Every action costs time (clock, sun and the 24 h bar move) and many cost or earn coins. Hovering or pressing a card previews everything it would change: the time on the day bar (dashed marker = finish time) and the four state cells — Tummy, Happy, Food and Coins — showing gains hatched and losses pulsing red.
 
 ## What it teaches
-- Time is finite: a 24 h bar (7:00 to 7:00) fills hour by hour; the 10 h of sleep are already dark. Under it, a plan strip shows where to be when; the character nudges at each change ("Morning shift!", "Lunch break!"). Tapping a band reads it aloud.
+- Time is finite: a 24 h bar (7:00 to 7:00) fills hour by hour; the hours after 21:00 are tinted "late", the night from the real bedtime is dark. Under it, a plan strip shows where to be when; the character nudges at each change ("Morning shift!", "Lunch break!"). Tapping a band reads it aloud.
 - Money: 1 hour of work = 1 coin. Needs (food, bus, clothes) and wants (toys, shows) cost coins. No work at weekends, so saving matters.
 - A working day: two shifts, 9:00–13:00 and 13:30–17:30, each worked with ONE tap ("Work until 13:00"). Arriving late = 1 coin less and −1 happy (shown on the button). Lunch break 13:00–13:30: the packed lunchbox is free, the bakery café costs 2 coins.
 
 ## Weekday plan
-7:00 breakfast (30 m) · 7:30 pack lunchbox (30 m) · 8:00 go to work · 9–13 morning shift (+4) · 13–13:30 lunch · 13:30–17:30 afternoon shift (+4) · 17:30 go home · 18:30 dinner · 19–21 free time (play/rest) · 21:00 sleep.
+7:00 breakfast (30 m) · 7:30 pack lunchbox (30 m) · 8:00 go to work · 9–13 morning shift (+4) · 13–13:30 lunch · 13:30–17:30 afternoon shift (+4) · 17:30 go home · 18:30 dinner · 19–21 free time (play/rest) · 21:00 sleep (10 h until 7:00).
 Weekend: no work — breakfast, free play, park, lunch, shops, park, dinner, free time.
 
 ## Places (always visible as a row; tap one to travel: walk 1 h free · bus 30 m 1 coin · bike 30 m free once owned)
@@ -28,8 +28,15 @@ Anywhere: Rest (30 m, happy +1) · Eat my lunchbox if packed (30 m, free, tummy 
 ## Unlocks & weather
 Day 1: Home, Work, Shops (food). Day 2: Park. Day 3: toys + wishes + puppet show. Day 4+: clothes stall, weather (forecast the evening before; rain needs the raincoat, cold the jacket — bus keeps you dry).
 
+## Sleep
+- Bedtime is 21:00: the character nudges ("Bedtime! If I stay up late, tomorrow I'll be sleepy and slow"), and if you are out you are walked home. You can still play, rest or eat at home; nothing else is open at night. A second nudge at 23:00 ("Bed now, or I'll sleep less than 8 hours"); at midnight you fall asleep whatever you were doing.
+- Wake-up is always 7:00, so the night is 7:00 minus bedtime: 21:00 = 10 h, 23:00 = 8 h, midnight = 7 h. The bed card shows the night's length (red when it is under 8 h).
+- Fewer than 8 h → a **sleepy day**: 🥱 in the top bar, 💤 on the character, and going places, playing and shopping take half an hour longer (a purple ½ h disc on the card). Eating, resting and the fixed work shifts are not slowed. Walking to work now arrives at 9:30 — late — unless you take the bus (still on time) or skip something.
+- Missing sleep is owed: tonight you need 8 h plus what you owe (the morning message says "in bed by …"). A normal 21:00 night (10 h) pays back up to 2 h; an earlier bedtime (from 19:00, 12 h) pays back more. Late nights in a row add up.
+- Old saves (v3 and earlier) migrate with nothing owed.
+
 ## Night
-At 21:00 (or "Go to bed" from 19:00) → day summary (24 h bar vs plan, hours per activity, earned/spent/kept) → sleep animation (clock spins to 7:00) → new morning.
+"Go to bed" (from 19:00) or midnight → day summary (24 h bar vs plan with the real night, hours per activity, earned/spent/kept, tonight's sleep and whether tomorrow is a sleepy day) → sleep animation (clock spins from bedtime to 7:00) → new morning.
 
 ## Look
 Picture-book wooden-toy world: sky dome with a travelling sun, chunky outlined cards, coins and apples as countable icons, mini clock discs for durations (1 disc = 1 h). Fredoka + Nunito. EN and PT-PT, everything read aloud (tap 🔊). Hold ⚙️ for grown-up settings.

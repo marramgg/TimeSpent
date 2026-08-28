@@ -26,6 +26,7 @@
     <header class="topbar">
       <div class="daylabel"><span class="n" id="dayN"></span><span class="wd" id="weekday"></span><span class="wk hidden" id="wkBadge"></span></div>
       <div class="weatherchip" id="weatherChip"><span class="we"></span><span class="wt"></span></div>
+      <div class="weatherchip sleepychip hidden" id="sleepyChip"><span class="we">🥱</span><span class="wt st"></span></div>
       <button class="gear" id="gear" aria-label="Grown-ups"><span class="ring"></span>⚙️</button>
     </header>
 
@@ -109,6 +110,7 @@
         <div class="sumcell"><div class="k" data-i18n="summary.saved"></div><div class="v" id="sumKept"></div></div>
       </div>
       <div class="walletline"><span data-i18n="summary.wallet"></span> <span class="coin lg"></span> <span id="sumWallet"></span></div>
+      <div class="forecast sumsleep" id="sumSleep"><span class="fe"></span><span class="ft"></span></div>
       <div class="forecast hidden" id="sumForecast"><span class="fe"></span><span class="ft"></span></div>
       <div class="big-row"><button class="btn big sky" id="btnSleep"></button></div>
     </div>
