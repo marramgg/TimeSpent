@@ -638,10 +638,10 @@ const I18N = {
     why: { noMeals: 'Fridge is empty', noToy: 'No toy yet', starving: 'Eat first!', tooSad: 'Play first!', lunchBreak: 'Lunch break', shiftStarts: 'Shift starts at {t}', shiftOver: 'Shift is over for today', notEnough: 'Need {n} more', wet: 'You\'d get wet', cold: 'You\'d get cold', carDone: 'Car is clean' },
     cats: { work: 'Work', travel: 'Travel', eat: 'Eating', play: 'Playing', wait: 'Resting', shop: 'Shopping', sleep: 'Sleep' },
     summary: { title: 'Day {n} is over!', earned: 'Earned', spent: 'Spent', saved: 'Kept', wallet: 'In my wallet', howDay: 'Where the time went', forecast: 'Tomorrow: {w}', hoursN: '{h} h', halfHour: '½ h',
-      sleep: 'Sleep tonight: {d}', short: '{d} too little — tomorrow I\'ll be sleepy and slow!', stillOwed: 'Still {d} of sleep to catch up — sleepy again tomorrow.', caughtUp: 'All caught up — tomorrow I\'m rested!', rested: 'Well rested!' },
+      sleep: 'Sleep tonight: {d}', short: '{d} too little — tomorrow I\'ll be sleepy and slow!', stillOwed: 'Still {d} of sleep to catch up — sleepy again tomorrow.', caughtUp: 'All caught up — tomorrow I\'m rested!', rested: 'Well rested!', extra: 'Extra sleep: I\'ll wake up extra happy (😊 +{n})!' },
     night: 'Good night… zzz', morning: 'Good morning!', itIs: 'It\'s {t}.',
     settings: { title: 'Grown-ups', hold: 'Hold the gear for a moment to open', lang: 'Language', clock: 'Clock', clock24: '24 h', clock12: '12 h', sound: 'Sounds', voice: 'Read aloud', on: 'On', off: 'Off', reset: 'Start over', sure: 'Erase everything and start from day 1?', yes: 'Yes, start over', no: 'Keep playing', close: 'Close',
-      about: 'One day is one turn. Every button shows how long it takes (clocks) and how many coins it costs or earns. Work has two shifts, 9–13 and 13:30–17:30; one hour of work is one coin, and arriving late means fewer coins. No work at weekends. Bedtime is at 9 o\'clock, but you can stay up at home until midnight. Fewer than 8 hours of sleep (bed after 11) makes the next day a sleepy one: going places, playing and shopping take half an hour longer, and the missing sleep must be caught up the next night.' },
+      about: 'One day is one turn. Every button shows how long it takes (clocks) and how many coins it costs or earns. Work has two shifts, 9–13 and 13:30–17:30; one hour of work is one coin, and arriving late means fewer coins. No work at weekends. Bedtime is at 9 o\'clock, but you can stay up at home until midnight. Fewer than 8 hours of sleep (bed after 11) makes the next day a sleepy one: going places, playing and shopping take half an hour longer, and the missing sleep must be caught up the next night. Sleeping longer than needed makes you wake up happier (+1 per extra hour, up to +4). At home you can go to bed at any time.' },
     bubble: {
       morning: 'Good morning! Today is {day}.',
       weatherRain: 'It\'s raining today. A raincoat would keep me dry!',
@@ -687,7 +687,8 @@ const I18N = {
       goBed: 'I\'m sleepy. Good night!',
       goBedLate: 'So late! I won\'t get my 8 hours of sleep… Good night.',
       sleepyMorning: 'I only slept {d}. I\'m so sleepy! Today, going places, playing and shopping take half an hour longer. Tonight I must be in bed by {t}.',
-      restedMorning: 'I slept {d}. I\'m not sleepy any more!',
+      restedMorning: 'I\'m not sleepy any more!',
+      sleptExtra: 'I slept {d}: more than I need, so I\'m extra happy today (+{n})!',
       nightStayHome: 'It\'s night — everything is closed. Let\'s stay home and go to bed.',
       itsTime: 'It\'s {t}.',
       newPark: 'The park is open! Playing there is free.',
@@ -769,10 +770,10 @@ const I18N = {
     why: { noMeals: 'Frigorífico vazio', noToy: 'Ainda sem brinquedos', starving: 'Come primeiro!', tooSad: 'Brinca primeiro!', lunchBreak: 'Pausa de almoço', shiftStarts: 'O turno começa às {t}', shiftOver: 'O turno acabou por hoje', notEnough: 'Faltam {n}', wet: 'Ficas molhado', cold: 'Ficas com frio', carDone: 'O carro está limpo' },
     cats: { work: 'Trabalho', travel: 'Viagem', eat: 'Comer', play: 'Brincar', wait: 'Descansar', shop: 'Compras', sleep: 'Dormir' },
     summary: { title: 'O dia {n} acabou!', earned: 'Ganhei', spent: 'Gastei', saved: 'Guardei', wallet: 'Na carteira', howDay: 'Para onde foi o tempo', forecast: 'Amanhã: {w}', hoursN: '{h} h', halfHour: '½ h',
-      sleep: 'Esta noite durmo {d}', short: 'Faltou {d} — amanhã fico com sono e lento!', stillOwed: 'Ainda faltam {d} de sono — amanhã continuo com sono.', caughtUp: 'Sono em dia — amanhã acordo descansado!', rested: 'Bem descansado!' },
+      sleep: 'Esta noite durmo {d}', short: 'Faltou {d} — amanhã fico com sono e lento!', stillOwed: 'Ainda faltam {d} de sono — amanhã continuo com sono.', caughtUp: 'Sono em dia — amanhã acordo descansado!', rested: 'Bem descansado!', extra: 'Sono extra: amanhã acordo extra feliz (😊 +{n})!' },
     night: 'Boa noite… zzz', morning: 'Bom dia!', itIs: 'São {t}.',
     settings: { title: 'Adultos', hold: 'Mantém a roda premida para abrir', lang: 'Língua', clock: 'Relógio', clock24: '24 h', clock12: '12 h', sound: 'Sons', voice: 'Ler em voz alta', on: 'Ligado', off: 'Desligado', reset: 'Recomeçar', sure: 'Apagar tudo e começar no dia 1?', yes: 'Sim, recomeçar', no: 'Continuar a jogar', close: 'Fechar',
-      about: 'Um dia é uma jogada. Cada botão mostra quanto tempo demora (relógios) e quantas moedas custa ou dá. O trabalho tem dois turnos, 9–13 e 13:30–17:30; uma hora de trabalho é uma moeda, e chegar tarde dá menos moedas. Não há trabalho ao fim de semana. A hora de dormir é às 9, mas pode-se ficar acordado em casa até à meia-noite. Menos de 8 horas de sono (cama depois das 11) faz do dia seguinte um dia com sono: ir a sítios, brincar e fazer compras demoram mais meia hora, e o sono em falta tem de ser recuperado na noite seguinte.' },
+      about: 'Um dia é uma jogada. Cada botão mostra quanto tempo demora (relógios) e quantas moedas custa ou dá. O trabalho tem dois turnos, 9–13 e 13:30–17:30; uma hora de trabalho é uma moeda, e chegar tarde dá menos moedas. Não há trabalho ao fim de semana. A hora de dormir é às 9, mas pode-se ficar acordado em casa até à meia-noite. Menos de 8 horas de sono (cama depois das 11) faz do dia seguinte um dia com sono: ir a sítios, brincar e fazer compras demoram mais meia hora, e o sono em falta tem de ser recuperado na noite seguinte. Dormir mais do que o necessário faz acordar mais feliz (+1 por cada hora extra, até +4). Em casa pode-se ir para a cama a qualquer hora.' },
     bubble: {
       morning: 'Bom dia! Hoje é {day}.',
       weatherRain: 'Hoje está a chover. Um impermeável dava jeito!',
@@ -818,7 +819,8 @@ const I18N = {
       goBed: 'Tenho sono. Boa noite!',
       goBedLate: 'Tão tarde! Não vou dormir as minhas 8 horas… Boa noite.',
       sleepyMorning: 'Só dormi {d}. Tenho tanto sono! Hoje, ir a sítios, brincar e fazer compras demoram mais meia hora. Hoje à noite tenho de estar na cama às {t}.',
-      restedMorning: 'Dormi {d}. Já não tenho sono!',
+      restedMorning: 'Já não tenho sono!',
+      sleptExtra: 'Dormi {d}: mais do que preciso, por isso hoje estou extra feliz (+{n})!',
       nightStayHome: 'É noite — está tudo fechado. Vamos ficar em casa e ir para a cama.',
       itsTime: 'São {t}.',
       newPark: 'O parque abriu! Brincar lá é grátis.',
@@ -866,12 +868,13 @@ function fmt(str, vars) {
 
 /* ===== TimeSpent — game engine (no DOM) ===== */
 const TSEngine = (() => {
-  const DAY_START = 7 * 60, BEDTIME = 21 * 60, BED_ALLOWED = 19 * 60, LATEST_BED = 24 * 60, STEP = 30;
+  const DAY_START = 7 * 60, BEDTIME = 21 * 60, LATEST_BED = 24 * 60, STEP = 30;
   const SLOTS = (LATEST_BED - DAY_START) / STEP; // half-hours that can be filled: 7:00 → midnight
-  // Sleep: bedtime is 21:00, but you may stay up (at home) until midnight, when you fall asleep on the spot. Waking is always 7:00.
-  // Fewer than SLEEP_NEED hours makes tomorrow a sleepy day: travel, play and shopping take SLEEPY_EXTRA minutes longer
-  // (eating, resting and the fixed work shifts don't). The missing hours are owed: tonight you need 8 h + what you owe.
-  const SLEEP_NEED = 8 * 60, SLEEPY_EXTRA = 30, SLOW_CATS = ['travel', 'play', 'shop'], LAST_CALL = 23 * 60;
+  // Sleep: bedtime is 21:00, but at home you may go to bed at any time, or stay up until midnight, when you fall asleep on the spot.
+  // Waking is always 7:00. Fewer than SLEEP_NEED hours makes tomorrow a sleepy day: travel, play and shopping take SLEEPY_EXTRA
+  // minutes longer (eating, resting and the fixed work shifts don't). The missing hours are owed: tonight you need 8 h + what you
+  // owe. Every full hour slept beyond that is a bonus: +1 happy at wake-up (BONUS_PER_HOUR, at most BONUS_MAX), on top of the usual minimum.
+  const SLEEP_NEED = 8 * 60, SLEEPY_EXTRA = 30, SLOW_CATS = ['travel', 'play', 'shop'], LAST_CALL = 23 * 60, BONUS_PER_HOUR = 1, BONUS_MAX = 4;
   const TUMMY_MAX = 6, HAPPY_MAX = 10, WAKE_TUMMY = 2, WAKE_HAPPY = 7, HUNGER_PER_STEP = 0.25, WORK_PAY = 1 /* per hour */, WORK_HAPPY = -0.5 /* per hour */;
   const LATE_COINS = 1, LATE_HAPPY = 1; // arriving after the shift start: one coin less and a bit sad
   const SHIFTS = [{ start: 9 * 60, end: 13 * 60 }, { start: 13 * 60 + 30, end: 17 * 60 + 30 }];
@@ -976,14 +979,16 @@ const TSEngine = (() => {
   // ---- sleep ----
   const sleepy = (state) => (state.owed || 0) > 0;
   const slowedBy = (state, cat) => sleepy(state) && SLOW_CATS.includes(cat) ? SLEEPY_EXTRA : 0;
-  // What a night starting at bedAt does: minutes slept, minutes needed (8 h + what is owed), what stays owed.
+  // What a night starting at bedAt does: minutes slept, minutes needed (8 h + what is owed), what stays owed, and the
+  // happiness bonus for every full hour beyond what is needed.
   function nightMath(state, bedAt) {
     const slept = DAY_START + 24 * 60 - bedAt;
     const need = SLEEP_NEED + (state.owed || 0);
-    return { slept, need, owedAfter: Math.max(0, need - slept), short: Math.max(0, SLEEP_NEED - slept) };
+    const bonus = Math.min(BONUS_MAX, Math.floor(Math.max(0, slept - need) / 60) * BONUS_PER_HOUR);
+    return { slept, need, owedAfter: Math.max(0, need - slept), short: Math.max(0, SLEEP_NEED - slept), bonus };
   }
-  // Latest bedtime tonight that clears what is owed (never later than the usual 21:00, never earlier than 19:00).
-  const bedByTonight = (owed) => clamp(DAY_START + 24 * 60 - (SLEEP_NEED + owed), BED_ALLOWED, BEDTIME);
+  // Latest bedtime tonight that clears what is owed (never later than the usual 21:00).
+  const bedByTonight = (owed) => clamp(DAY_START + 24 * 60 - (SLEEP_NEED + owed), DAY_START, BEDTIME);
   const sleepIfBedNow = (state) => nightMath(state, Math.min(state.time, LATEST_BED));
 
   function isOpen(state, place, at) {
@@ -1093,9 +1098,9 @@ const TSEngine = (() => {
       if (s.day >= SHOW_UNLOCK) add({ id: 'show', emoji: '🎭', cat: 'play', minutes: 60, cost: 2, happy: 4, enabled: s.coins >= 2, why: { key: 'notEnough', n: 2 - s.coins } });
     }
     add({ id: 'rest', emoji: '😌', cat: 'wait', minutes: 30, happy: 1 });
-    if (s.loc === 'home') {
-      const n = sleepIfBedNow(s); // the bed card shows how long the night would be
-      add({ id: 'bed', emoji: '🛏️', cat: 'sleep', enabled: s.time >= BED_ALLOWED, hidden: s.time < BED_ALLOWED, sleep: n.slept, sleepShort: n.owedAfter > 0 });
+    if (s.loc === 'home') { // at home you can always go to bed; the card shows how long the night would be and the happiness bonus
+      const n = sleepIfBedNow(s);
+      add({ id: 'bed', emoji: '🛏️', cat: 'sleep', sleep: n.slept, sleepShort: n.owedAfter > 0, happy: n.bonus });
     }
     return list.filter(a => !a.hidden);
   }
@@ -1218,7 +1223,7 @@ const TSEngine = (() => {
     return { day: state.day, weekday: weekday(state.day), earned: state.today.earned, spent: state.today.spent,
              kept: state.today.earned - state.today.spent, wallet: state.coins, byCat, forecast: state.forecast,
              timeline: state.timeline.slice(0, SLOTS), showForecast: state.day + 1 >= WEATHER_FROM,
-             bedAt, slept: n.slept, short: n.short, owedAfter: n.owedAfter, sleepyTomorrow: n.owedAfter > 0, wasOwed: (state.owed || 0) > 0 };
+             bedAt, slept: n.slept, short: n.short, owedAfter: n.owedAfter, sleepyTomorrow: n.owedAfter > 0, wasOwed: (state.owed || 0) > 0, bonus: n.bonus };
   }
   function rollForecast(state) {
     if (state.day + 1 < WEATHER_FROM) return 'sun';
@@ -1230,7 +1235,7 @@ const TSEngine = (() => {
     if (state.bedAt == null) state.bedAt = Math.min(Math.max(state.time, BEDTIME), LATEST_BED);
     const n = nightMath(state, state.bedAt);
     state.flags.wasSleepy = sleepy(state); // so the morning can say "not sleepy any more"
-    state.slept = n.slept; state.owed = n.owedAfter;
+    state.slept = n.slept; state.owed = n.owedAfter; state.sleepBonus = n.bonus;
     state.forecast = rollForecast(state);
     state.phase = 'night'; return true;
   }
@@ -1238,7 +1243,8 @@ const TSEngine = (() => {
     if (state.phase !== 'night') return null;
     const wasSleepy = !!state.flags.wasSleepy;
     state.day += 1; state.time = DAY_START; state.loc = 'home';
-    state.tummy = WAKE_TUMMY; state.happy = clamp(Math.max(WAKE_HAPPY, state.happy), 0, HAPPY_MAX);
+    const bonus = state.sleepBonus || 0; state.sleepBonus = 0;
+    state.tummy = WAKE_TUMMY; state.happy = clamp(Math.max(WAKE_HAPPY, state.happy) + bonus, 0, HAPPY_MAX); // extra sleep = happier morning
     state.weather = state.forecast; state.timeline = []; state.today = freshToday(); state.lunchbox = 0; state.bedAt = null;
     state.flags.hHungry = state.flags.hStarving = state.flags.hBored = state.flags.hSad = false;
     state.flags.hBedtime = state.flags.hLastCall = state.flags.hSlowTold = false;
@@ -1252,11 +1258,12 @@ const TSEngine = (() => {
     if (state.day === STALL_UNLOCK.clothes) msgs.push({ key: 'newClothes' });
     if (state.weather === 'rain' && !state.wardrobe.raincoat) msgs.push({ key: 'weatherRain' });
     if (state.weather === 'cold' && !state.wardrobe.jacket) msgs.push({ key: 'weatherCold' });
+    if (bonus > 0) msgs.push({ key: 'sleptExtra', d: state.slept, n: bonus });
     const first = routine(state)[0].id; state.lastBand = first; msgs.push({ key: 'plan', band: first });
     return msgs;
   }
 
-  return { DAY_START, BEDTIME, BED_ALLOWED, LATEST_BED, LAST_CALL, SLEEP_NEED, SLEEPY_EXTRA, SLOW_CATS, STEP, SLOTS, TUMMY_MAX, HAPPY_MAX, PLACES, TRAVEL, ITEMS, CAT_COLORS, STALL_UNLOCK, FRIDGE_MAX, LUNCH_FROM, LUNCH_TO, WORK_PAY, SHIFTS, HUNGER_PER_STEP,
+  return { DAY_START, BEDTIME, LATEST_BED, LAST_CALL, SLEEP_NEED, SLEEPY_EXTRA, SLOW_CATS, BONUS_PER_HOUR, BONUS_MAX, STEP, SLOTS, TUMMY_MAX, HAPPY_MAX, PLACES, TRAVEL, ITEMS, CAT_COLORS, STALL_UNLOCK, FRIDGE_MAX, LUNCH_FROM, LUNCH_TO, WORK_PAY, SHIFTS, HUNGER_PER_STEP,
            newGame, timeInfo, isOpen, isWeekend, weekday, unlocked, stallOpen, actions, perform, travelOptions, destinations,
            travel, catalogue, buy, setWish, summary, goToSleep, wakeUp, routine, bandAt, shiftAt, sleepy, slowedBy, nightMath, bedByTonight, isNight };
 })();
@@ -1569,9 +1576,9 @@ if (typeof module !== 'undefined') module.exports = TSEngine;
       const label = a.id === 'work' ? (a.until && a.enabled ? fmt(Lx.act.work, { t: fmtTime(a.until) }) : Lx.act.workClosed) : Lx.act[a.id];
       let chips = '';
       if (a.minutes) chips += timeDiscs(a.minutes, a.extra);
+      if (a.id === 'bed') chips += `<span class="cchip ${a.sleepShort ? 'spend' : 'free'}">😴 ${fmtH(a.sleep)}</span>`; // how long the night would be, then the happiness bonus
       chips += effChip('🍎', a.tummy) + effChip('😊', a.happy) + effChip('🧺', a.fridge) + effChip(COIN_ICO, (a.earn || 0) - (a.cost || 0));
       if (a.id === 'work' && a.late && a.enabled) chips += `<span class="cchip spend">⏰ ${Lx.late}</span>`;
-      if (a.id === 'bed') chips += `<span class="cchip ${a.sleepShort ? 'spend' : 'free'}">😴 ${fmtH(a.sleep)}</span>`; // how long the night would be
       if (a.id === 'shop') chips = `<span class="mchip">${['food', 'clothes', 'toys'].filter(st => E.stallOpen(S, st)).map(st => ({ food: '🥕', clothes: '🧥', toys: '🧸' })[st]).join(' ')}</span>` + chips;
       const why = !a.enabled && a.why ? `<div class="why">${whyShort(a.why)}</div>` : '';
       html += `<div role="button" tabindex="0" class="${cls.join(' ')}" data-act="${a.id}" data-min="${a.enabled && a.minutes ? a.minutes : 0}" data-cat="${a.cat}" aria-disabled="${!a.enabled}"><span class="ae">${a.emoji}</span><span class="txt"><span class="al">${label}</span><span class="ac">${chips}</span>${why}</span></div>`;
@@ -1711,7 +1718,8 @@ if (typeof module !== 'undefined') module.exports = TSEngine;
     const order = ['work', 'travel', 'eat', 'play', 'shop', 'wait', 'sleep'];
     $('sumLegend').innerHTML = order.filter(c => sum.byCat[c]).map(c => `<div${c === 'sleep' ? ' class="wide"' : ''}><span class="sw" style="background:${E.CAT_COLORS[c]}"></span><span>${Lx.cats[c]}</span>${timeDiscs(sum.byCat[c])}</div>`).join('');
     // the night ahead: how long, and whether tomorrow will be a sleepy day
-    const sd = Lx.time.sayDur, verdict = sum.short ? fmt(Lx.summary.short, { d: sd(sum.short) }) : sum.owedAfter ? fmt(Lx.summary.stillOwed, { d: sd(sum.owedAfter) }) : sum.wasOwed ? Lx.summary.caughtUp : Lx.summary.rested;
+    const sd = Lx.time.sayDur; let verdict = sum.short ? fmt(Lx.summary.short, { d: sd(sum.short) }) : sum.owedAfter ? fmt(Lx.summary.stillOwed, { d: sd(sum.owedAfter) }) : sum.wasOwed ? Lx.summary.caughtUp : Lx.summary.rested;
+    if (sum.bonus) verdict += ' ' + fmt(Lx.summary.extra, { n: sum.bonus });
     const ss = $('sumSleep'); ss.classList.toggle('bad', sum.sleepyTomorrow);
     ss.innerHTML = `<span class="fe">${sum.sleepyTomorrow ? '🥱' : '😴'}</span><span class="ft"><b>${fmt(Lx.summary.sleep, { d: sd(sum.slept) })}</b><br>${verdict}</span>`;
     $('sumEarned').innerHTML = `<span class="coin lg"></span>+${sum.earned}`; $('sumSpent').innerHTML = `<span class="coin lg"></span>−${sum.spent}`;

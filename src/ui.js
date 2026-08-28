@@ -305,9 +305,9 @@
       const label = a.id === 'work' ? (a.until && a.enabled ? fmt(Lx.act.work, { t: fmtTime(a.until) }) : Lx.act.workClosed) : Lx.act[a.id];
       let chips = '';
       if (a.minutes) chips += timeDiscs(a.minutes, a.extra);
+      if (a.id === 'bed') chips += `<span class="cchip ${a.sleepShort ? 'spend' : 'free'}">😴 ${fmtH(a.sleep)}</span>`; // how long the night would be, then the happiness bonus
       chips += effChip('🍎', a.tummy) + effChip('😊', a.happy) + effChip('🧺', a.fridge) + effChip(COIN_ICO, (a.earn || 0) - (a.cost || 0));
       if (a.id === 'work' && a.late && a.enabled) chips += `<span class="cchip spend">⏰ ${Lx.late}</span>`;
-      if (a.id === 'bed') chips += `<span class="cchip ${a.sleepShort ? 'spend' : 'free'}">😴 ${fmtH(a.sleep)}</span>`; // how long the night would be
       if (a.id === 'shop') chips = `<span class="mchip">${['food', 'clothes', 'toys'].filter(st => E.stallOpen(S, st)).map(st => ({ food: '🥕', clothes: '🧥', toys: '🧸' })[st]).join(' ')}</span>` + chips;
       const why = !a.enabled && a.why ? `<div class="why">${whyShort(a.why)}</div>` : '';
       html += `<div role="button" tabindex="0" class="${cls.join(' ')}" data-act="${a.id}" data-min="${a.enabled && a.minutes ? a.minutes : 0}" data-cat="${a.cat}" aria-disabled="${!a.enabled}"><span class="ae">${a.emoji}</span><span class="txt"><span class="al">${label}</span><span class="ac">${chips}</span>${why}</span></div>`;
@@ -447,7 +447,8 @@
     const order = ['work', 'travel', 'eat', 'play', 'shop', 'wait', 'sleep'];
     $('sumLegend').innerHTML = order.filter(c => sum.byCat[c]).map(c => `<div${c === 'sleep' ? ' class="wide"' : ''}><span class="sw" style="background:${E.CAT_COLORS[c]}"></span><span>${Lx.cats[c]}</span>${timeDiscs(sum.byCat[c])}</div>`).join('');
     // the night ahead: how long, and whether tomorrow will be a sleepy day
-    const sd = Lx.time.sayDur, verdict = sum.short ? fmt(Lx.summary.short, { d: sd(sum.short) }) : sum.owedAfter ? fmt(Lx.summary.stillOwed, { d: sd(sum.owedAfter) }) : sum.wasOwed ? Lx.summary.caughtUp : Lx.summary.rested;
+    const sd = Lx.time.sayDur; let verdict = sum.short ? fmt(Lx.summary.short, { d: sd(sum.short) }) : sum.owedAfter ? fmt(Lx.summary.stillOwed, { d: sd(sum.owedAfter) }) : sum.wasOwed ? Lx.summary.caughtUp : Lx.summary.rested;
+    if (sum.bonus) verdict += ' ' + fmt(Lx.summary.extra, { n: sum.bonus });
     const ss = $('sumSleep'); ss.classList.toggle('bad', sum.sleepyTomorrow);
     ss.innerHTML = `<span class="fe">${sum.sleepyTomorrow ? '🥱' : '😴'}</span><span class="ft"><b>${fmt(Lx.summary.sleep, { d: sd(sum.slept) })}</b><br>${verdict}</span>`;
     $('sumEarned').innerHTML = `<span class="coin lg"></span>+${sum.earned}`; $('sumSpent').innerHTML = `<span class="coin lg"></span>−${sum.spent}`;
