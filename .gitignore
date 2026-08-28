@@ -1,4 +1,13 @@
+# never commit secrets (the GitHub token lives in .git/github-token, which git cannot track anyway)
+*token*
+.env
+.env.*
+.secrets/
+# local junk
 _to_delete/
 .DS_Store
 node_modules/
+package.json
+package-lock.json
 test/shots/
+dist/artifact.html
