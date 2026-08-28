@@ -14,7 +14,7 @@ Weekend: no work — breakfast, free play, park, lunch, shops, park, dinner, fre
 ## Places (always visible as a row; tap one to travel: walk 1 h free · bus 30 m 1 coin · bike 30 m free once owned)
 | Place | Open | Actions |
 |---|---|---|
-| Home | always | Cook & eat (30 m, 1 fridge meal, tummy +4, happy +1), Pack a lunchbox (30 m, 1 meal, weekdays), Play with a toy (1 h, happy +2), Go to bed (from 19:00) |
+| Home | always | Cook & eat (30 m, 1 fridge meal, tummy +4, happy +1), Pack a lunchbox (30 m, 1 meal, weekdays), Play with a toy (1 h, happy +2), Go to bed (any time — the card shows the night's length and the happiness bonus) |
 | Work · the bakery | 8–18 Mon–Fri | Work until the end of the shift (1 coin/h, −1 coin & −1 happy if late), Lunch at the café (30 m, 2 coins, tummy +4, happy +1) |
 | Shops | 9–18 daily | Food basket (6 meals / 5 coins, fridge holds 12), Restaurant (30 m, 2 coins, tummy +4, happy +1), Clothes (raincoat 3, jacket 4, party hat 2), Toys (ball 3, teddy 5, kite 8, bike 12, train 20) + "I wish" |
 | Park | always | Play (1 h, free, happy +3), Ice cream (30 m, 1 coin, +1/+1), Puppet show (1 h, 2 coins, happy +4) |
@@ -30,9 +30,10 @@ Day 1: Home, Work, Shops (food). Day 2: Park. Day 3: toys + wishes + puppet show
 
 ## Sleep
 - Bedtime is 21:00: the character nudges ("Bedtime! If I stay up late, tomorrow I'll be sleepy and slow"), and if you are out you are walked home. You can still play, rest or eat at home; nothing else is open at night. A second nudge at 23:00 ("Bed now, or I'll sleep less than 8 hours"); at midnight you fall asleep whatever you were doing.
-- Wake-up is always 7:00, so the night is 7:00 minus bedtime: 21:00 = 10 h, 23:00 = 8 h, midnight = 7 h. The bed card shows the night's length (red when it is under 8 h).
+- At home you can go to bed at any time (sleeping a workday away just earns no coins). Wake-up is always 7:00, so the night is 7:00 minus bedtime: 19:00 = 12 h, 21:00 = 10 h, 23:00 = 8 h, midnight = 7 h. The bed card shows the night's length (red when it is under 8 h).
 - Fewer than 8 h → a **sleepy day**: 🥱 in the top bar, 💤 on the character, and going places, playing and shopping take half an hour longer (a purple ½ h disc on the card). Eating, resting and the fixed work shifts are not slowed. Walking to work now arrives at 9:30 — late — unless you take the bus (still on time) or skip something.
-- Missing sleep is owed: tonight you need 8 h plus what you owe (the morning message says "in bed by …"). A normal 21:00 night (10 h) pays back up to 2 h; an earlier bedtime (from 19:00, 12 h) pays back more. Late nights in a row add up.
+- Missing sleep is owed: tonight you need 8 h plus what you owe (the morning message says "in bed by …"). A normal 21:00 night (10 h) pays back up to 2 h; an earlier bedtime pays back more. Late nights in a row add up.
+- Extra sleep is a bonus: every full hour beyond what is needed = +1 happy at wake-up (max +4), on top of the usual wake-up minimum of 7. Bed at 21:00 → +2, at 19:00 → +4; owed hours are paid back first (2 h owed + a 10 h night = no bonus). The bed card shows it as 😊+n, the summary and the morning message say it too.
 - Old saves (v3 and earlier) migrate with nothing owed.
 
 ## Night

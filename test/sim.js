@@ -32,7 +32,7 @@ function randomPolicy(s, enabled, rnd) {
   const a = enabled.filter(x => !x.sheet); return { type: 'act', id: a[Math.floor(rnd() * a.length)].id };
 }
 
-// A child-like sensible policy: eat when hungry, work when open, play when sad, shop for food when fridge empty, sleep at 20:00.
+// A child-like sensible policy: eat when hungry, work when open, play when sad, shop for food when fridge empty, bed from 19:00.
 function sensiblePolicy(s, enabled) {
   const has = id => enabled.find(a => a.id === id);
   const go = (dest, mode) => ({ type: 'travel', dest, mode: (mode || (s.toys.includes('bike') ? 'bike' : 'walk')) });
@@ -59,7 +59,7 @@ function sensiblePolicy(s, enabled) {
   if (E.isOpen(s, 'bakery') && s.loc === 'bakery' && has('work')) return { type: 'act', id: 'work' };
   if (!E.isWeekend(s.day) && s.time < 15 * 60 && s.loc !== 'bakery' && s.happy > 1) return go('bakery');
   if (s.loc === 'bakery' && s.time < 9 * 60) return { type: 'act', id: 'rest' };
-  if (has('bed')) return { type: 'act', id: 'bed' };
+  if (has('bed') && s.time >= 19 * 60) return { type: 'act', id: 'bed' };
   if (s.loc !== 'home' && s.time >= 17 * 60) return go('home');
   if (s.loc === 'home' && has('toy') && s.happy < 6) return { type: 'act', id: 'toy' };
   if (s.loc === 'park' && has('play')) return { type: 'act', id: 'play' };
@@ -136,6 +136,24 @@ console.log('--- sleep: night owl (never goes to bed) vs early bird');
   assert(E.destinations(p).find(d => d.id === 'park').night, 'park shows as night', E.destinations(p));
   p.time = 23 * 60 + 30; const toy = E.perform(p, 'toy'); // 60 min, but midnight comes first
   assert(p.time === 24 * 60 && p.phase === 'summary' && toy.msgs.some(m => m.key === 'midnight'), 'play cut short at midnight', p);
+}
+{ // the bed card is always there at home; extra sleep is a happiness bonus (+1 per full hour beyond what is needed, max +4)
+  const b = E.newGame('🐨', 9);
+  const bed = () => E.actions(b).find(a => a.id === 'bed');
+  assert(bed() && bed().enabled && bed().sleep === 24 * 60 && bed().happy === 4, 'bed card at 7:00: 24 h, bonus capped at +4', bed());
+  b.time = 19 * 60; assert(bed().sleep === 12 * 60 && bed().happy === 4, 'bed at 19:00: 12 h, +4', bed());
+  b.time = 21 * 60; assert(bed().sleep === 10 * 60 && bed().happy === 2, 'bed at 21:00: 10 h, +2', bed());
+  b.time = 23 * 60; assert(bed().sleep === 8 * 60 && bed().happy === 0, 'bed at 23:00: 8 h, no bonus', bed());
+  b.time = 19 * 60; b.happy = 3; assert(E.perform(b, 'bed').ok, 'bed at 19:00', b);
+  const sum = E.summary(b); assert(sum.bonus === 4 && !sum.sleepyTomorrow, 'summary shows the bonus', sum);
+  E.goToSleep(b); const m = E.wakeUp(b);
+  assert(b.happy === 10 && m.some(x => x.key === 'sleptExtra' && x.n === 4), 'wake at max(7, 3) + 4 = 10 (capped) with the extra-sleep message', { happy: b.happy, m });
+  // owed sleep is paid back first: 2 h owed + 10 h night = nothing extra
+  const c = E.newGame('🐸', 10); c.owed = 120; c.time = 21 * 60; c.happy = 2; E.perform(c, 'bed');
+  assert(E.summary(c).bonus === 0, 'no bonus while paying back', E.summary(c));
+  E.goToSleep(c); const mc = E.wakeUp(c); assert(c.happy === 7 && c.owed === 0 && !mc.some(x => x.key === 'sleptExtra'), 'plain rested morning', { happy: c.happy, mc });
+  // sleeping the whole day away is allowed (no coins that day) and still capped at +4
+  const d = E.newGame('🐰', 11); d.time = 7 * 60 + 30; E.perform(d, 'bed'); assert(E.summary(d).slept === 23 * 60 + 30 && E.summary(d).bonus === 4, 'all-day sleep', E.summary(d));
 }
 console.log('ok');
 console.log('ALL OK');

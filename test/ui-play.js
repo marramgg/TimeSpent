@@ -59,7 +59,7 @@ const file = 'file://' + path.join(__dirname, '..', 'dist', 'index.html');
     if (s.loc === 'bakery' && acts.includes('work')) { await page.evaluate(() => TS.act('work')); continue; }
     if (!E.isWeekend(s.day) && s.time < 15 * 60 && s.loc !== 'bakery' && s.happy > 1 && s.tummy > 1) { await go('bakery'); continue; }
     if (s.loc === 'bakery' && s.time < 9 * 60) { await page.evaluate(() => TS.act('rest')); continue; }
-    if (acts.includes('bed')) { await page.evaluate(() => TS.act('bed')); continue; }
+    if (acts.includes('bed') && s.time >= 19 * 60) { await page.evaluate(() => TS.act('bed')); continue; }
     if (s.loc !== 'home' && s.time >= 17 * 60) { await go('home'); continue; }
     if (s.loc === 'home' && acts.includes('toy') && s.happy < 6) { await page.evaluate(() => TS.act('toy')); continue; }
     if (s.loc === 'park' && acts.includes('play')) { await page.evaluate(() => TS.act('play')); continue; }

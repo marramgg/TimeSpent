@@ -1,11 +1,12 @@
 /* ===== TimeSpent — game engine (no DOM) ===== */
 const TSEngine = (() => {
-  const DAY_START = 7 * 60, BEDTIME = 21 * 60, BED_ALLOWED = 19 * 60, LATEST_BED = 24 * 60, STEP = 30;
+  const DAY_START = 7 * 60, BEDTIME = 21 * 60, LATEST_BED = 24 * 60, STEP = 30;
   const SLOTS = (LATEST_BED - DAY_START) / STEP; // half-hours that can be filled: 7:00 → midnight
-  // Sleep: bedtime is 21:00, but you may stay up (at home) until midnight, when you fall asleep on the spot. Waking is always 7:00.
-  // Fewer than SLEEP_NEED hours makes tomorrow a sleepy day: travel, play and shopping take SLEEPY_EXTRA minutes longer
-  // (eating, resting and the fixed work shifts don't). The missing hours are owed: tonight you need 8 h + what you owe.
-  const SLEEP_NEED = 8 * 60, SLEEPY_EXTRA = 30, SLOW_CATS = ['travel', 'play', 'shop'], LAST_CALL = 23 * 60;
+  // Sleep: bedtime is 21:00, but at home you may go to bed at any time, or stay up until midnight, when you fall asleep on the spot.
+  // Waking is always 7:00. Fewer than SLEEP_NEED hours makes tomorrow a sleepy day: travel, play and shopping take SLEEPY_EXTRA
+  // minutes longer (eating, resting and the fixed work shifts don't). The missing hours are owed: tonight you need 8 h + what you
+  // owe. Every full hour slept beyond that is a bonus: +1 happy at wake-up (BONUS_PER_HOUR, at most BONUS_MAX), on top of the usual minimum.
+  const SLEEP_NEED = 8 * 60, SLEEPY_EXTRA = 30, SLOW_CATS = ['travel', 'play', 'shop'], LAST_CALL = 23 * 60, BONUS_PER_HOUR = 1, BONUS_MAX = 4;
   const TUMMY_MAX = 6, HAPPY_MAX = 10, WAKE_TUMMY = 2, WAKE_HAPPY = 7, HUNGER_PER_STEP = 0.25, WORK_PAY = 1 /* per hour */, WORK_HAPPY = -0.5 /* per hour */;
   const LATE_COINS = 1, LATE_HAPPY = 1; // arriving after the shift start: one coin less and a bit sad
   const SHIFTS = [{ start: 9 * 60, end: 13 * 60 }, { start: 13 * 60 + 30, end: 17 * 60 + 30 }];
@@ -110,14 +111,16 @@ const TSEngine = (() => {
   // ---- sleep ----
   const sleepy = (state) => (state.owed || 0) > 0;
   const slowedBy = (state, cat) => sleepy(state) && SLOW_CATS.includes(cat) ? SLEEPY_EXTRA : 0;
-  // What a night starting at bedAt does: minutes slept, minutes needed (8 h + what is owed), what stays owed.
+  // What a night starting at bedAt does: minutes slept, minutes needed (8 h + what is owed), what stays owed, and the
+  // happiness bonus for every full hour beyond what is needed.
   function nightMath(state, bedAt) {
     const slept = DAY_START + 24 * 60 - bedAt;
     const need = SLEEP_NEED + (state.owed || 0);
-    return { slept, need, owedAfter: Math.max(0, need - slept), short: Math.max(0, SLEEP_NEED - slept) };
+    const bonus = Math.min(BONUS_MAX, Math.floor(Math.max(0, slept - need) / 60) * BONUS_PER_HOUR);
+    return { slept, need, owedAfter: Math.max(0, need - slept), short: Math.max(0, SLEEP_NEED - slept), bonus };
   }
-  // Latest bedtime tonight that clears what is owed (never later than the usual 21:00, never earlier than 19:00).
-  const bedByTonight = (owed) => clamp(DAY_START + 24 * 60 - (SLEEP_NEED + owed), BED_ALLOWED, BEDTIME);
+  // Latest bedtime tonight that clears what is owed (never later than the usual 21:00).
+  const bedByTonight = (owed) => clamp(DAY_START + 24 * 60 - (SLEEP_NEED + owed), DAY_START, BEDTIME);
   const sleepIfBedNow = (state) => nightMath(state, Math.min(state.time, LATEST_BED));
 
   function isOpen(state, place, at) {
@@ -227,9 +230,9 @@ const TSEngine = (() => {
       if (s.day >= SHOW_UNLOCK) add({ id: 'show', emoji: '🎭', cat: 'play', minutes: 60, cost: 2, happy: 4, enabled: s.coins >= 2, why: { key: 'notEnough', n: 2 - s.coins } });
     }
     add({ id: 'rest', emoji: '😌', cat: 'wait', minutes: 30, happy: 1 });
-    if (s.loc === 'home') {
-      const n = sleepIfBedNow(s); // the bed card shows how long the night would be
-      add({ id: 'bed', emoji: '🛏️', cat: 'sleep', enabled: s.time >= BED_ALLOWED, hidden: s.time < BED_ALLOWED, sleep: n.slept, sleepShort: n.owedAfter > 0 });
+    if (s.loc === 'home') { // at home you can always go to bed; the card shows how long the night would be and the happiness bonus
+      const n = sleepIfBedNow(s);
+      add({ id: 'bed', emoji: '🛏️', cat: 'sleep', sleep: n.slept, sleepShort: n.owedAfter > 0, happy: n.bonus });
     }
     return list.filter(a => !a.hidden);
   }
@@ -352,7 +355,7 @@ const TSEngine = (() => {
     return { day: state.day, weekday: weekday(state.day), earned: state.today.earned, spent: state.today.spent,
              kept: state.today.earned - state.today.spent, wallet: state.coins, byCat, forecast: state.forecast,
              timeline: state.timeline.slice(0, SLOTS), showForecast: state.day + 1 >= WEATHER_FROM,
-             bedAt, slept: n.slept, short: n.short, owedAfter: n.owedAfter, sleepyTomorrow: n.owedAfter > 0, wasOwed: (state.owed || 0) > 0 };
+             bedAt, slept: n.slept, short: n.short, owedAfter: n.owedAfter, sleepyTomorrow: n.owedAfter > 0, wasOwed: (state.owed || 0) > 0, bonus: n.bonus };
   }
   function rollForecast(state) {
     if (state.day + 1 < WEATHER_FROM) return 'sun';
@@ -364,7 +367,7 @@ const TSEngine = (() => {
     if (state.bedAt == null) state.bedAt = Math.min(Math.max(state.time, BEDTIME), LATEST_BED);
     const n = nightMath(state, state.bedAt);
     state.flags.wasSleepy = sleepy(state); // so the morning can say "not sleepy any more"
-    state.slept = n.slept; state.owed = n.owedAfter;
+    state.slept = n.slept; state.owed = n.owedAfter; state.sleepBonus = n.bonus;
     state.forecast = rollForecast(state);
     state.phase = 'night'; return true;
   }
@@ -372,7 +375,8 @@ const TSEngine = (() => {
     if (state.phase !== 'night') return null;
     const wasSleepy = !!state.flags.wasSleepy;
     state.day += 1; state.time = DAY_START; state.loc = 'home';
-    state.tummy = WAKE_TUMMY; state.happy = clamp(Math.max(WAKE_HAPPY, state.happy), 0, HAPPY_MAX);
+    const bonus = state.sleepBonus || 0; state.sleepBonus = 0;
+    state.tummy = WAKE_TUMMY; state.happy = clamp(Math.max(WAKE_HAPPY, state.happy) + bonus, 0, HAPPY_MAX); // extra sleep = happier morning
     state.weather = state.forecast; state.timeline = []; state.today = freshToday(); state.lunchbox = 0; state.bedAt = null;
     state.flags.hHungry = state.flags.hStarving = state.flags.hBored = state.flags.hSad = false;
     state.flags.hBedtime = state.flags.hLastCall = state.flags.hSlowTold = false;
@@ -386,11 +390,12 @@ const TSEngine = (() => {
     if (state.day === STALL_UNLOCK.clothes) msgs.push({ key: 'newClothes' });
     if (state.weather === 'rain' && !state.wardrobe.raincoat) msgs.push({ key: 'weatherRain' });
     if (state.weather === 'cold' && !state.wardrobe.jacket) msgs.push({ key: 'weatherCold' });
+    if (bonus > 0) msgs.push({ key: 'sleptExtra', d: state.slept, n: bonus });
     const first = routine(state)[0].id; state.lastBand = first; msgs.push({ key: 'plan', band: first });
     return msgs;
   }
 
-  return { DAY_START, BEDTIME, BED_ALLOWED, LATEST_BED, LAST_CALL, SLEEP_NEED, SLEEPY_EXTRA, SLOW_CATS, STEP, SLOTS, TUMMY_MAX, HAPPY_MAX, PLACES, TRAVEL, ITEMS, CAT_COLORS, STALL_UNLOCK, FRIDGE_MAX, LUNCH_FROM, LUNCH_TO, WORK_PAY, SHIFTS, HUNGER_PER_STEP,
+  return { DAY_START, BEDTIME, LATEST_BED, LAST_CALL, SLEEP_NEED, SLEEPY_EXTRA, SLOW_CATS, BONUS_PER_HOUR, BONUS_MAX, STEP, SLOTS, TUMMY_MAX, HAPPY_MAX, PLACES, TRAVEL, ITEMS, CAT_COLORS, STALL_UNLOCK, FRIDGE_MAX, LUNCH_FROM, LUNCH_TO, WORK_PAY, SHIFTS, HUNGER_PER_STEP,
            newGame, timeInfo, isOpen, isWeekend, weekday, unlocked, stallOpen, actions, perform, travelOptions, destinations,
            travel, catalogue, buy, setWish, summary, goToSleep, wakeUp, routine, bandAt, shiftAt, sleepy, slowedBy, nightMath, bedByTonight, isNight };
 })();

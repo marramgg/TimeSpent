@@ -62,6 +62,8 @@ const E = require('../src/engine.js');
   s = await st(); if (s.owed !== 60 || s.slept !== 7 * 60) fail('day 2 should owe 1 h: ' + JSON.stringify(s));
   const chipVisible = await page.evaluate(() => !document.getElementById('sleepyChip').classList.contains('hidden')); if (!chipVisible) fail('sleepy chip hidden');
   const zz = await page.evaluate(() => !!document.querySelector('#avatar .zz')); if (!zz) fail('no zz on avatar');
+  const bedAt7 = await page.evaluate(() => { const c = document.querySelector('[data-act="bed"]'); return c && c.textContent; });
+  if (!bedAt7 || !/24 h/.test(bedAt7)) fail('bed card should be there at 7:00 showing 24 h: ' + bedAt7);
   await page.evaluate(() => { TS.state.fridge = 6; }); // enough food for the day (no shopping in this script)
   await act('cook'); await act('pack');
   await page.click('[data-place="bakery"]'); await page.waitForTimeout(300);
@@ -82,12 +84,13 @@ const E = require('../src/engine.js');
   while ((await st()).time < 21 * 60) await act('rest');
   await act('bed'); await page.waitForTimeout(2500);
   const sumSleep2 = await page.evaluate(() => document.getElementById('sumSleep').textContent);
-  if (!/10 hours/.test(sumSleep2) || !/caught up/i.test(sumSleep2)) fail('summary 2 wrong: ' + sumSleep2);
+  if (!/10 hours/.test(sumSleep2) || !/caught up/i.test(sumSleep2) || !/\+1\)/.test(sumSleep2)) fail('summary 2 wrong (expect caught up + bonus +1): ' + sumSleep2);
   await shot('8-summary-caught-up');
   await page.click('#btnSleep'); await page.waitForTimeout(6000);
   const mText2 = await page.evaluate(() => document.getElementById('mText').textContent);
   if (!/not sleepy any more/.test(mText2)) fail('rested morning text wrong: ' + mText2);
   await page.click('#btnWake'); await page.waitForTimeout(300);
+  if (!/extra happy today \(\+1\)/.test(await bubble())) fail('no extra-sleep message in the bubble: ' + await bubble());
   s = await st(); if (s.owed !== 0) fail('day 3 should owe nothing');
   const chipHidden = await page.evaluate(() => document.getElementById('sleepyChip').classList.contains('hidden')); if (!chipHidden) fail('sleepy chip should be hidden again');
 
@@ -105,7 +108,7 @@ const E = require('../src/engine.js');
   await page.evaluate((save) => { localStorage.setItem('timespent.save.v1', JSON.stringify(save)); localStorage.setItem('timespent.settings.v1', JSON.stringify({ lang: 'en', clock24: true, sound: false, voice: false, avatar: '🦊' })); }, v3);
   await page.reload(); await page.waitForTimeout(300); await page.click('#btnContinue'); await page.waitForTimeout(300);
   s = await st(); if (s.v !== 4 || s.owed !== 0 || s.day !== 5 || s.time !== 18 * 60) fail('v3 save did not migrate: ' + JSON.stringify(s));
-  await act('cook'); await act('rest'); // 19:00: bed card visible with 12 h
+  await act('cook'); await act('rest'); // 19:00: bed card shows 12 h
   const bedChip3 = await page.evaluate(() => document.querySelector('[data-act="bed"] .cchip').textContent); if (!/12 h/.test(bedChip3)) fail('migrated save bed card: ' + bedChip3);
 
   console.log(errors.length ? errors : 'no page errors');
