@@ -1,0 +1,164 @@
+<div id="app" class="app" data-screen="start">
+
+  <!-- ===== Start screen ===== -->
+  <section id="start" class="screen start">
+    <div class="lang-row"><div class="seg" id="langSeg"><button data-lang="en" aria-pressed="true">EN</button><button data-lang="pt">PT</button></div></div>
+    <div class="clock-hero" id="startClock"></div>
+    <h1 class="logo">Time<b>Spent</b></h1>
+    <p class="tagline" data-i18n="tagline"></p>
+    <p class="pick" data-i18n="pickFriend"></p>
+    <div class="avatars" id="avatars"></div>
+    <div class="actions">
+      <button class="btn big leaf" id="btnContinue"></button>
+      <button class="btn big" id="btnPlay"></button>
+      <button class="btn secondary" id="btnNew"></button>
+      <div class="hidden" id="newConfirm" style="display:flex;flex-direction:column;gap:10px;align-items:center">
+        <p style="margin:0;font-weight:800" data-i18n="settings.sure"></p>
+        <button class="btn berry" id="btnNewYes" data-i18n="settings.yes"></button>
+        <button class="btn secondary" id="btnNewNo" data-i18n="settings.no"></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Game screen ===== -->
+  <main id="game" class="screen game">
+    <header class="topbar">
+      <div class="daylabel"><span class="n" id="dayN"></span><span class="wd" id="weekday"></span><span class="wk hidden" id="wkBadge"></span></div>
+      <div class="weatherchip" id="weatherChip"><span class="we"></span><span class="wt"></span></div>
+      <button class="gear" id="gear" aria-label="Grown-ups"><span class="ring"></span>⚙️</button>
+    </header>
+
+    <div class="body">
+      <section class="hero">
+        <div class="sky" id="sky">
+          <div class="layer day"></div>
+          <div class="layer dusk"></div>
+          <div class="layer nightl"></div>
+          <div class="stars"></div>
+          <div class="cloud c1"><i></i><i></i><i></i></div>
+          <div class="cloud c2"><i></i><i></i><i></i></div>
+          <div class="rain-layer"></div>
+          <div class="snow-layer"></div>
+          <div class="moon" id="moon"></div>
+          <div class="sun" id="sun"></div>
+          <svg class="hills" viewBox="0 0 400 60" preserveAspectRatio="none" aria-hidden="true">
+            <path id="hillBack" d="M0,40 C60,10 120,10 180,32 C240,52 300,8 400,30 L400,60 L0,60 Z" fill="#8FCB6F"/>
+            <path id="hillFront" d="M0,50 C80,30 150,60 220,44 C290,28 340,50 400,42 L400,60 L0,60 Z" fill="#6FB65A"/>
+          </svg>
+        </div>
+        <div class="clockrow">
+          <div class="clock" id="clock"></div>
+          <div class="digital"><span class="t" id="digital">7:00</span><span class="p"><span class="ico" id="partIco">🌅</span> <span id="partTxt"></span></span></div>
+        </div>
+        <div class="daybar" id="daybar"></div>
+      </section>
+
+      <section class="status">
+        <div class="buddy">
+          <div class="avatar" id="avatar">🐻</div>
+          <div class="bubble"><p id="bubbleText"></p><button class="speak on" id="speakBtn" aria-label="Read aloud">🔊</button></div>
+        </div>
+        <div class="meters">
+          <div class="meter tummy" id="mTummy"><div class="lab">🍎 <span data-i18n="tummy"></span><span class="pvd hidden"></span></div><div class="segs"></div></div>
+          <div class="meter happy" id="mHappy"><div class="lab">😊 <span data-i18n="happy"></span><span class="pvd hidden"></span></div><div class="segs"></div></div>
+          <div class="meter fridge" id="mFridge"><div class="lab">🧺 <span data-i18n="fridge"></span><span class="lunch hidden" id="lunchBadge">🍱</span><span class="pvd hidden"></span><span class="count" id="fridgeCount">0</span></div><div class="apples" id="apples"></div></div>
+          <div class="meter wallet" id="wallet"><div class="lab"><span class="coin"></span> <span data-i18n="coins"></span><span class="pvd hidden"></span><span class="count" id="coinCount">0</span></div><div class="coinstack" id="coinstack"></div></div>
+          <div class="wishbox hidden" id="wishbox"><span class="wemoji"></span><div class="wtxt"><div class="wname"></div><div class="bar"><i></i></div></div><span class="wnum"></span></div>
+        </div>
+      </section>
+
+      <section class="place">
+        <div class="places" id="places"></div>
+        <div class="actions" id="actions"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- ===== Travel sheet ===== -->
+  <div class="sheet" id="travelSheet">
+    <div class="scrim" data-close="travelSheet"></div>
+    <div class="panel">
+      <div class="head"><h2 id="travelTitle"></h2><button class="close" data-close="travelSheet" aria-label="Close">✕</button></div>
+      <div class="travel-dest" id="travelDest"></div>
+      <p class="pick" id="travelHow" style="margin:6px 0"></p>
+      <div class="modes" id="travelModes"></div>
+    </div>
+  </div>
+
+  <!-- ===== Shop sheet ===== -->
+  <div class="sheet" id="shopSheet">
+    <div class="scrim" data-close="shopSheet"></div>
+    <div class="panel">
+      <div class="head"><h2 id="shopTitle"></h2><div class="wallet" id="shopWallet"><div class="coin lg"></div><span class="count" id="shopCoins">0</span></div><button class="close" data-close="shopSheet" aria-label="Close">✕</button></div>
+      <div class="tabs" id="stallTabs" role="tablist"></div>
+      <div class="tiles" id="stallItems"></div>
+    </div>
+  </div>
+
+  <!-- ===== Day summary ===== -->
+  <div class="overlay" id="summary">
+    <div class="scrim"></div>
+    <div class="card">
+      <h2 id="sumTitle"></h2>
+      <div class="daybar sum" id="sumBar"></div>
+      <div class="legend" id="sumLegend"></div>
+      <div class="sumgrid">
+        <div class="sumcell earn"><div class="k" data-i18n="summary.earned"></div><div class="v" id="sumEarned"></div></div>
+        <div class="sumcell spend"><div class="k" data-i18n="summary.spent"></div><div class="v" id="sumSpent"></div></div>
+        <div class="sumcell"><div class="k" data-i18n="summary.saved"></div><div class="v" id="sumKept"></div></div>
+      </div>
+      <div class="walletline"><span data-i18n="summary.wallet"></span> <span class="coin lg"></span> <span id="sumWallet"></span></div>
+      <div class="forecast hidden" id="sumForecast"><span class="fe"></span><span class="ft"></span></div>
+      <div class="big-row"><button class="btn big sky" id="btnSleep"></button></div>
+    </div>
+  </div>
+
+  <!-- ===== Night ===== -->
+  <div class="overlay night-screen" id="night">
+    <div class="scrim"></div><div class="starsbig"></div>
+    <div class="card">
+      <div class="nmoon"></div>
+      <div class="clock" id="nightClock"></div>
+      <div class="sleeper" id="nightAvatar">🐻</div>
+      <div class="zzz"><span>z</span><span>z</span><span>z</span></div>
+      <p id="nightText" style="margin:0;font-weight:700"></p>
+    </div>
+  </div>
+
+  <!-- ===== Morning ===== -->
+  <div class="overlay morning-screen" id="morning">
+    <div class="scrim"></div>
+    <div class="card">
+      <div class="sunbig"></div>
+      <h2 data-i18n="morning"></h2>
+      <div class="mday" id="mDay"></div>
+      <div class="mweather" id="mWeather"><span class="fe"></span><span class="ft"></span></div>
+      <p id="mText" style="margin:0;font-weight:700"></p>
+      <button class="btn big leaf" id="btnWake"></button>
+    </div>
+  </div>
+
+  <!-- ===== Settings (grown-ups) ===== -->
+  <div class="overlay settings" id="settings">
+    <div class="scrim" data-close="settings"></div>
+    <div class="card">
+      <div class="head" style="display:flex;justify-content:space-between;align-items:center"><h2 data-i18n="settings.title"></h2><button class="close" data-close="settings" aria-label="Close">✕</button></div>
+      <p class="about" data-i18n="settings.about"></p>
+      <div class="row"><span class="k" data-i18n="settings.lang"></span><div class="seg" id="setLang"><button data-v="en">EN</button><button data-v="pt">PT</button></div></div>
+      <div class="row"><span class="k" data-i18n="settings.clock"></span><div class="seg" id="setClock"><button data-v="24" data-i18n="settings.clock24"></button><button data-v="12" data-i18n="settings.clock12"></button></div></div>
+      <div class="row"><span class="k" data-i18n="settings.sound"></span><div class="seg" id="setSound"><button data-v="1" data-i18n="settings.on"></button><button data-v="0" data-i18n="settings.off"></button></div></div>
+      <div class="row"><span class="k" data-i18n="settings.voice"></span><div class="seg" id="setVoice"><button data-v="1" data-i18n="settings.on"></button><button data-v="0" data-i18n="settings.off"></button></div></div>
+      <div class="danger">
+        <button class="btn berry" id="btnReset" data-i18n="settings.reset"></button>
+        <div class="hidden" id="resetConfirm" style="display:flex;flex-direction:column;gap:8px">
+          <p style="margin:0;font-weight:700" data-i18n="settings.sure"></p>
+          <button class="btn berry" id="btnResetYes" data-i18n="settings.yes"></button>
+          <button class="btn secondary" id="btnResetNo" data-i18n="settings.no"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <div class="fx" id="fx"></div>
+</div>
