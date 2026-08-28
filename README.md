@@ -28,5 +28,6 @@ Balance knobs are at the top of `engine.js` (`WORK_PAY`, `ITEMS` prices, `STALL_
 
 - `node test/sim.js` — simulates 21+ days with random and sensible play; fails if the child could ever get stuck.
 - `node test/shots.js` / `node test/ui-play.js` — Playwright screenshots and a scripted 9-day playthrough at iPhone/iPad sizes (needs `npm i playwright`).
+- `node test/start-shots.js` — checks the start screen fits without scrolling at iPhone/iPad sizes in every state (fresh, saved game, "new game?" confirm), with the real fonts if `npm i @fontsource/nunito @fontsource/fredoka` was run.
 
 See `GAME-DESIGN.md` for the rules in one page.

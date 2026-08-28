@@ -493,13 +493,13 @@
   document.addEventListener('click', (ev) => {
     const b = ev.target.closest('button, [role="button"], [data-close]'); if (!b) return;
     if (b.dataset.close) { closeSheet(b.dataset.close); SFX.tap(); return; }
-    if (b.dataset.lang) { settings.lang = b.dataset.lang; saveSettings(); applyI18n(); relabelBeads(); if (S) renderAll(); else renderStart(); return; }
+    if (b.dataset.lang) { settings.lang = b.dataset.lang; saveSettings(); applyI18n(); if (S) renderAll(); else renderStart(); return; }
     if (b.dataset.avatar) { settings.avatar = b.dataset.avatar; saveSettings(); document.querySelectorAll('.avatar-btn').forEach(x => x.setAttribute('aria-pressed', x.dataset.avatar === settings.avatar)); SFX.happy(); speak(''); return; }
     if (b.id === 'btnPlay') { SFX.tap(); startGame(true); return; }
     if (b.id === 'btnContinue') { SFX.tap(); startGame(false); return; }
-    if (b.id === 'btnNew') { SFX.tap(); $('newConfirm').classList.remove('hidden'); b.classList.add('hidden'); return; }
+    if (b.id === 'btnNew') { SFX.tap(); $('newConfirm').classList.remove('hidden'); b.classList.add('hidden'); $('btnContinue').classList.add('hidden'); return; }
     if (b.id === 'btnNewYes') { SFX.tap(); startGame(true); return; }
-    if (b.id === 'btnNewNo') { SFX.tap(); $('newConfirm').classList.add('hidden'); $('btnNew').classList.remove('hidden'); return; }
+    if (b.id === 'btnNewNo') { SFX.tap(); $('newConfirm').classList.add('hidden'); $('btnNew').classList.remove('hidden'); $('btnContinue').classList.remove('hidden'); return; }
     if (b.dataset.act) { doAction(b.dataset.act, b); return; }
     if (b.dataset.place) { if (busy || !S || S.phase !== 'day') return; SFX.tap(); if (b.dataset.place === S.loc) { bubble([{ key: 'arrived', place: S.loc }]); return; } openTravelTo(b.dataset.place); return; }
     if (b.dataset.band) { SFX.tap(); const band = E.routine(S).find(x => x.id === b.dataset.band); if (band) { const Lx = L(); const a = sayTime(band.from * 60), bb = sayTime((band.to % 24) * 60); speak(fmt(Lx.planSay, { a, b: bb, what: Lx.plan[band.id] })); toast(`${band.emoji} ${Lx.plan[band.id]}`); } return; }
@@ -510,8 +510,8 @@
     if (b.id === 'speakBtn') { SFX.tap(); const on = settings.voice; if (!on) { settings.voice = true; saveSettings(); applyI18n(); } speak($('bubbleText').textContent); return; }
     if (b.id === 'btnSleep') { SFX.tap(); goToSleep(); return; }
     if (b.id === 'btnWake') { SFX.tap(); wake(); return; }
-    if (b.parentElement && b.parentElement.id === 'setLang') { settings.lang = b.dataset.v; saveSettings(); applyI18n(); relabelBeads(); if (S) renderAll(); return; }
-    if (b.parentElement && b.parentElement.id === 'setClock') { settings.clock24 = b.dataset.v === '24'; saveSettings(); applyI18n(); relabelBeads(); if (S) renderAll(); return; }
+    if (b.parentElement && b.parentElement.id === 'setLang') { settings.lang = b.dataset.v; saveSettings(); applyI18n(); if (S) renderAll(); return; }
+    if (b.parentElement && b.parentElement.id === 'setClock') { settings.clock24 = b.dataset.v === '24'; saveSettings(); applyI18n(); if (S) renderAll(); return; }
     if (b.parentElement && b.parentElement.id === 'setSound') { settings.sound = b.dataset.v === '1'; saveSettings(); applyI18n(); return; }
     if (b.parentElement && b.parentElement.id === 'setVoice') { settings.voice = b.dataset.v === '1'; saveSettings(); applyI18n(); if (!settings.voice && window.speechSynthesis) speechSynthesis.cancel(); return; }
     if (b.id === 'btnReset') { $('resetConfirm').classList.remove('hidden'); return; }
