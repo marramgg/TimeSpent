@@ -474,7 +474,7 @@
       $('morning').classList.add('open'); SFX.morning(); speak(`${Lx.morning} ${msgsText(msgs)}`);
     }, 5200);
   }
-  function wake() { $('morning').classList.remove('open'); bubble(S.msgs, { quiet: true }); }
+  function wake() { $('morning').classList.remove('open'); S.msgs = (S.msgs || []).filter(m => m.key !== 'morning'); bubble(S.msgs, { quiet: true }); }
 
   // ---------- start screen ----------
   function renderStart() {
@@ -495,7 +495,7 @@
   function startGame(fresh) {
     const saved = fresh ? null : store.get(SAVE_KEY);
     if (saved && saved.v >= 1 && saved.day) { S = migrate(saved); }
-    else { S = E.newGame(settings.avatar, (Date.now() % 100000) | 0); S.msgs = [{ key: 'morning', day: 1 }, { key: 'plan', band: E.routine(S)[0].id }]; }
+    else { S = E.newGame(settings.avatar, (Date.now() % 100000) | 0); S.msgs = [{ key: 'plan', band: E.routine(S)[0].id }]; }
     applyI18n(); renderAll(); $('app').dataset.screen = 'game'; save();
     if (S.phase === 'summary') showSummary();
     else if (S.phase === 'night') { S.phase = 'summary'; showSummary(); }
