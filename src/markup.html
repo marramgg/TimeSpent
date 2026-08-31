@@ -6,6 +6,11 @@
     <div class="clock-hero" id="startClock"></div>
     <h1 class="logo">Time<b>Spent</b></h1>
     <p class="tagline" data-i18n="tagline"></p>
+    <p class="pick" data-i18n="whoToday"></p>
+    <div class="modepick" id="modePick">
+      <div role="button" tabindex="0" class="mode-btn" data-mode="child"><span class="me">🧒</span><span class="ml" data-i18n="modeChild"></span><span class="ms" data-i18n="modeChildSub"></span></div>
+      <div role="button" tabindex="0" class="mode-btn" data-mode="adult"><span class="me">🧑‍🍳</span><span class="ml" data-i18n="modeAdult"></span><span class="ms" data-i18n="modeAdultSub"></span></div>
+    </div>
     <p class="pick" data-i18n="pickFriend"></p>
     <div class="avatars" id="avatars"></div>
     <div class="start-actions">
@@ -57,7 +62,7 @@
           <div class="bubble" id="bubbleBox" role="button" tabindex="0"><p id="bubbleText"></p><span class="more hidden" id="bubbleMore">▸</span><button class="speak on" id="speakBtn" aria-label="Read aloud">🔊</button></div>
         </div>
         <div class="meters">
-          <div class="meter tummy" id="mTummy"><div class="lab">🍎 <span data-i18n="tummy"></span><span class="pvd hidden"></span></div><div class="segs"></div></div>
+          <div class="meter tummy" id="mTummy"><div class="lab"><span id="tummyIco">🍎</span> <span id="tummyLab"></span><span class="pvd hidden"></span></div><div class="segs"></div></div>
           <div class="meter happy" id="mHappy"><div class="lab">😊 <span data-i18n="happy"></span><span class="pvd hidden"></span></div><div class="segs"></div></div>
           <div class="meter fridge" id="mFridge"><div class="lab">🧺 <span data-i18n="fridge"></span><span class="lunch hidden" id="lunchBadge">🍱</span><span class="pvd hidden"></span><span class="count" id="fridgeCount">0</span></div><div class="apples" id="apples"></div></div>
           <div class="meter wallet" id="wallet"><div class="lab"><span class="coin"></span> <span data-i18n="coins"></span><span class="pvd hidden"></span><span class="count" id="coinCount">0</span></div><div class="coinstack" id="coinstack"></div></div>
@@ -133,6 +138,16 @@
       <div class="mday" id="mDay"></div>
       <p id="mText" style="margin:0;font-weight:700"></p>
       <button class="btn big leaf" id="btnWake"></button>
+    </div>
+  </div>
+
+  <!-- ===== "Did we wake up late today?" — asked once, at the start of a child's game ===== -->
+  <div class="overlay morning-screen" id="wakeAsk">
+    <div class="scrim"></div>
+    <div class="card">
+      <div class="sunbig"></div>
+      <h2 data-i18n="wakeQ"></h2>
+      <div class="big-row wakeq"><button class="btn big leaf" id="btnWakeEarly"></button><button class="btn big sky" id="btnWakeLate"></button></div>
     </div>
   </div>
 

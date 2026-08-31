@@ -65,12 +65,21 @@ svg { display: block; }
 .start .logo b { color: var(--berry); }
 .start .tagline { font-weight: 700; font-size: 1.05em; color: var(--ink-soft); max-width: 22em; text-wrap: balance; margin: 0; }
 .start .pick { font-family: var(--font-display); font-size: 1.3em; margin: .4em 0 0; }
+.modepick { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.mode-btn { display: grid; gap: 1px; justify-items: center; align-content: start; width: clamp(128px, 38vw, 168px); padding: 10px 8px;
+  border-radius: 18px; background: var(--paper); border: var(--line) solid var(--ink-line); box-shadow: 0 5px 0 var(--ink-line); transition: transform .1s; }
+.mode-btn .me { font-size: clamp(28px, 7vmin, 40px); line-height: 1.1; }
+.mode-btn .ml { font-family: var(--font-display); font-weight: 700; font-size: 1.05em; }
+.mode-btn .ms { font-size: .72em; font-weight: 700; color: var(--ink-soft); line-height: 1.2; text-wrap: balance; }
+.mode-btn[aria-pressed="true"] { background: var(--gold-light); transform: scale(1.04); box-shadow: 0 5px 0 var(--ink-line), 0 0 0 5px rgba(246,196,69,.55); }
+.big-row.wakeq { display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
 .avatars { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
 .avatar-btn { width: clamp(64px, 14vmin, 96px); height: clamp(64px, 14vmin, 96px); border-radius: 50%; background: var(--paper); border: var(--line) solid var(--ink-line);
   box-shadow: 0 5px 0 var(--ink-line); font-size: clamp(34px, 7.5vmin, 54px); display: grid; place-items: center; transition: transform .1s; }
 .avatar-btn[aria-pressed="true"] { background: var(--gold-light); transform: scale(1.12); box-shadow: 0 5px 0 var(--ink-line), 0 0 0 6px rgba(246,196,69,.55); }
 @media (max-width: 430px) { /* phones: all six friends on one row, so the start screen fits without scrolling */
-  .avatars { gap: 8px; } .avatar-btn { width: 52px; height: 52px; font-size: 28px; } }
+  .avatars { gap: 8px; } .avatar-btn { width: 52px; height: 52px; font-size: 28px; }
+  .mode-btn { width: calc(50% - 8px); padding: 8px 6px; } .mode-btn .me { font-size: 26px; } }
 .start .start-actions { display: flex; flex-direction: column; gap: 12px; align-items: center; }
 .start .confirm { display: flex; flex-direction: column; gap: 10px; align-items: center; }
 .start .confirm p { margin: 0; font-weight: 800; }
@@ -89,6 +98,7 @@ svg { display: block; }
 .topbar .gear { margin-left: auto; flex: 0 0 auto; }
 @media (max-width: 480px) {
   .meters { grid-template-columns: .8fr 1.25fr 1.05fr auto; gap: 5px; }
+  .meters.nofridge { grid-template-columns: 1fr 1.2fr auto; }
   .meter.wallet .lab .count { font-size: 1.15em; }
   .meter .lab span[data-i18n] { display: none; } .meter .lab { font-size: 1.05em; }
   .meter, .wallet { padding: 4px 6px; }
@@ -190,6 +200,9 @@ svg { display: block; }
 @media (prefers-reduced-motion: reduce) { .bubble .more { animation: none; } }
 
 .meters { display: grid; grid-template-columns: 1fr 1.1fr 1fr 1fr; gap: 8px; grid-column: 1 / -1; }
+/* a child has no fridge to keep an eye on — grown-ups do the shopping — so the row is three meters wide */
+.meters.nofridge { grid-template-columns: 1fr 1.1fr 1fr; }
+.meters.nofridge .meter.fridge { display: none; }
 .meter.fridge .apples { display: flex; align-items: center; gap: 6px; min-height: 14px; }
 .meter.fridge .stack { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1px; justify-items: center; max-width: 76px; font-size: 10px; line-height: 1; max-height: 24px; overflow: hidden; }
 .meter.fridge .stack .apple { display: block; width: 11px; height: 11px; }
@@ -459,6 +472,11 @@ svg { display: block; }
     <div class="clock-hero" id="startClock"></div>
     <h1 class="logo">Time<b>Spent</b></h1>
     <p class="tagline" data-i18n="tagline"></p>
+    <p class="pick" data-i18n="whoToday"></p>
+    <div class="modepick" id="modePick">
+      <div role="button" tabindex="0" class="mode-btn" data-mode="child"><span class="me">🧒</span><span class="ml" data-i18n="modeChild"></span><span class="ms" data-i18n="modeChildSub"></span></div>
+      <div role="button" tabindex="0" class="mode-btn" data-mode="adult"><span class="me">🧑‍🍳</span><span class="ml" data-i18n="modeAdult"></span><span class="ms" data-i18n="modeAdultSub"></span></div>
+    </div>
     <p class="pick" data-i18n="pickFriend"></p>
     <div class="avatars" id="avatars"></div>
     <div class="start-actions">
@@ -510,7 +528,7 @@ svg { display: block; }
           <div class="bubble" id="bubbleBox" role="button" tabindex="0"><p id="bubbleText"></p><span class="more hidden" id="bubbleMore">▸</span><button class="speak on" id="speakBtn" aria-label="Read aloud">🔊</button></div>
         </div>
         <div class="meters">
-          <div class="meter tummy" id="mTummy"><div class="lab">🍎 <span data-i18n="tummy"></span><span class="pvd hidden"></span></div><div class="segs"></div></div>
+          <div class="meter tummy" id="mTummy"><div class="lab"><span id="tummyIco">🍎</span> <span id="tummyLab"></span><span class="pvd hidden"></span></div><div class="segs"></div></div>
           <div class="meter happy" id="mHappy"><div class="lab">😊 <span data-i18n="happy"></span><span class="pvd hidden"></span></div><div class="segs"></div></div>
           <div class="meter fridge" id="mFridge"><div class="lab">🧺 <span data-i18n="fridge"></span><span class="lunch hidden" id="lunchBadge">🍱</span><span class="pvd hidden"></span><span class="count" id="fridgeCount">0</span></div><div class="apples" id="apples"></div></div>
           <div class="meter wallet" id="wallet"><div class="lab"><span class="coin"></span> <span data-i18n="coins"></span><span class="pvd hidden"></span><span class="count" id="coinCount">0</span></div><div class="coinstack" id="coinstack"></div></div>
@@ -589,6 +607,16 @@ svg { display: block; }
     </div>
   </div>
 
+  <!-- ===== "Did we wake up late today?" — asked once, at the start of a child's game ===== -->
+  <div class="overlay morning-screen" id="wakeAsk">
+    <div class="scrim"></div>
+    <div class="card">
+      <div class="sunbig"></div>
+      <h2 data-i18n="wakeQ"></h2>
+      <div class="big-row wakeq"><button class="btn big leaf" id="btnWakeEarly"></button><button class="btn big sky" id="btnWakeLate"></button></div>
+    </div>
+  </div>
+
   <!-- ===== Settings (grown-ups) ===== -->
   <div class="overlay settings" id="settings">
     <div class="scrim" data-close="settings"></div>
@@ -626,19 +654,26 @@ const I18N = {
     intro: 'A game for young children about time and money: every choice takes time, work earns coins, and coins buy what you need — and sometimes what you wish for.',
     pickFriend: 'Pick your friend',
     play: 'Play', cont: 'Keep playing', newGame: 'New game',
+    whoToday: 'Who do you want to be?',
+    modeChild: 'A child', modeChildSub: 'School, playing, bedtime',
+    modeAdult: 'A grown-up', modeAdultSub: 'Work, shopping, coins',
+    wakeQ: 'Did we wake up late today?',
+    wakeQEarly: 'No, early — 7 o\'clock', wakeQLate: 'Yes, late — half past 7',
     weekdays: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
     dayN: 'Day {n}',
     weekend: 'Weekend',
     partOfDay: { morning: 'morning', afternoon: 'afternoon', evening: 'evening', night: 'night' },
-    tummy: 'Tummy', happy: 'Happy', coins: 'Coins', fridge: 'Food', lunchboxLabel: 'Lunchbox', wish: 'My wish', noWish: 'No wish yet',
+    tummy: 'Tummy', health: 'Health', happy: 'Happy', coins: 'Coins', fridge: 'Food', lunchboxLabel: 'Lunchbox', wish: 'My wish', noWish: 'No wish yet',
     nightLabel: 'Night',
-    places: { home: 'Home', bakery: 'Bakery', shops: 'Shops', park: 'Park' },
-    placeSub: { home: '', bakery: '', shops: '', park: '' },
-    placeWords: { home: 'home', bakery: 'the bakery', shops: 'the shops', park: 'the park' },
+    places: { home: 'Home', bakery: 'Bakery', school: 'School', shops: 'Shops', park: 'Park' },
+    placeSub: { home: '', bakery: '', school: '', shops: '', park: '' },
+    placeWords: { home: 'home', bakery: 'the bakery', school: 'school', shops: 'the shops', park: 'the park' },
     planTitle: 'The plan for today', nowMarker: 'now', planNow: 'Now',
     plan: {
       breakfast: 'Breakfast at home', pack: 'Pack a lunchbox', goWork: 'Go to the bakery', work: 'Morning shift', work2: 'Afternoon shift', lunch: 'Lunch break', shops: 'Buy food at the shops', park: 'Play at the park',
       free: 'Play or rest at home', goHome: 'Go home', dinner: 'Dinner at home', sleep: 'Sleep',
+      getReady: 'Get ready for school', goSchool: 'Walk to school', school: 'Morning at school', lunchSchool: 'Lunch at school',
+      activities: 'Afternoon activities', tidyUp: 'Wash hands and tidy up', freeHome: 'Play at home', bath: 'Bath time',
     },
     planSay: 'From {a} to {b}: {what}.',
     open: 'Open', closed: 'Closed', opensAt: 'Opens at {t}', closedToday: 'Closed today', youAreHere: 'You are here',
@@ -647,11 +682,14 @@ const I18N = {
       rest: 'Rest', shop: 'Look at the stalls',
       restaurant: 'Eat at the restaurant', play: 'Play in the park', icecream: 'Ice cream', show: 'Puppet show',
       bed: 'Go to bed', sleep: 'Sleep', wake: 'Let\'s go!', sleepNow: 'Go to sleep',
+      breakfast: 'Eat breakfast', dress: 'Get dressed', teethAM: 'Brush my teeth', lunch: 'Eat lunch',
+      wash: 'Wash my hands', tidy: 'Tidy up', dinner: 'Eat dinner', bath: 'Have a bath', teethPM: 'Brush my teeth',
+      playHome: 'Play', school: 'School until {t}', schoolClosed: 'School',
     },
     // spoken when a child presses a card, so the buttons work without reading
     say: {
       dur: 'It takes {d}.', costs: 'It costs {n}.', earns: 'You get {n}.', free: 'It is free.',
-      night: 'You would sleep {d}.', locked: 'Not now. {why}',
+      night: 'You would sleep {d}.', wakeAt: 'You would wake up at {t}.', locked: 'Not now. {why}',
       goTo: 'Go to {place}.',
     },
     travel: { title: 'Where to?', how: 'How do we get there?', walk: 'Walk', bus: 'Bus', bike: 'Bike', back: 'Back' },
@@ -661,13 +699,15 @@ const I18N = {
              ball: 'Ball', teddy: 'Teddy bear', kite: 'Kite', bike: 'Bike', train: 'Train set' },
     itemsA: { meals: 'food for 6 meals', hat: 'a party hat',
               ball: 'a ball', teddy: 'a teddy bear', kite: 'a kite', bike: 'a bike', train: 'a train set' },
-    why: { noMeals: 'Fridge is empty', noToy: 'No toy yet', starving: 'Eat first!', tooSad: 'Play first!', lunchBreak: 'Lunch break', shiftStarts: 'Shift starts at {t}', shiftOver: 'Shift is over for today', notEnough: 'Need {n} more' },
+    why: { noMeals: 'Fridge is empty', noToy: 'No toy yet', starving: 'Eat first!', tooSad: 'Play first!', lunchBreak: 'Lunch break', shiftStarts: 'Shift starts at {t}', shiftOver: 'Shift is over for today', notEnough: 'Need {n} more', notDressed: 'Get dressed first!', schoolOver: 'School is over for today' },
     cats: { work: 'Work', travel: 'Travel', eat: 'Eating', play: 'Playing', wait: 'Resting', shop: 'Shopping', sleep: 'Sleep' },
     summary: { title: 'Day {n} is over!', earned: 'Earned', spent: 'Spent', saved: 'Kept', wallet: 'In my wallet', howDay: 'Where the time went', hoursN: '{h} h', halfHour: '½ h',
-      sleep: 'Sleep tonight: {d}', short: 'A short night — straight to sleep!', rested: 'A good long night!', extra: 'Extra sleep: I\'ll wake up happier (😊 +{n})!' },
+      sleep: 'Sleep tonight: {d}', short: 'A short night — straight to sleep!', rested: 'A good long night!', extra: 'Extra sleep: I\'ll wake up happier (😊 +{n})!',
+      wake: 'Tomorrow I wake up at {t}', wakeEarly: 'In bed on time, so there is time to play in the morning!', wakeLate: 'A late bedtime, so there is no time to play in the morning.' },
     night: 'Good night… zzz', morning: 'Good morning!', itIs: 'It\'s {t}.',
     undo: 'Oops, go back',
     settings: { title: 'Grown-ups', hold: 'Hold the gear for a moment to open', lang: 'Language', clock: 'Clock', clock24: '24 h', clock12: '12 h', sound: 'Sounds', voice: 'Read aloud', on: 'On', off: 'Off', reset: 'Start over', sure: 'Erase everything and start from day 1?', yes: 'Yes, start over', no: 'Keep playing', close: 'Close',
+      aboutChild: 'One day is one turn. Press and hold any card to hear what it does before it happens; let go and it happens. The clock moves in quarters of an hour. The routine — breakfast, getting dressed, teeth, washing hands, tidying up, dinner, a bath every second day — is a card each, and every quarter of an hour it takes is a quarter not spent playing. School is one card, half past eight to half past five. Leaving without breakfast or without brushing costs health, and arriving after the bell costs happiness. Going to bed by half past eight means waking at seven with time to play before school; later means half past seven and a scramble. Pocket money is one coin each morning; the shops open on day 3, the toy stall and wishes on day 4.',
       about: 'One day is one turn. Press and hold any card to hear what it does before it happens; let go and it happens. Every card shows how long it takes (clocks) and how many coins it costs or earns. Work has two shifts, 9–13 and 13:30–17:30, and one hour of work is one coin. No work at weekends. Bedtime is at 9, but you can stay up at home until midnight; going to bed earlier means a longer night and waking up happier. One new thing opens each day: the shops on day 2, the park on day 3, the toy stall and wishes on day 4.' },
     bubble: {
       morning: 'Good morning! Today is {day}.',
@@ -685,8 +725,8 @@ const I18N = {
       cafe: 'Lunch at the café. Yummy, but it cost 2 coins.',
       packed: 'Lunchbox packed! I\'ll eat it at the bakery.',
       lunchbox: 'My lunchbox! Yummy, and it cost no coins.',
-      closed: { bakery: 'The bakery is closed. It opens at {t}.', shops: 'The shops are closed. They open at {t}.' },
-      closedToday: { bakery: 'The bakery is closed today. It opens on Monday.', shops: 'The shops are closed today.' },
+      closed: { bakery: 'The bakery is closed. It opens at {t}.', school: 'School is closed. It opens at {t}.', shops: 'The shops are closed. They open at {t}.' },
+      closedToday: { bakery: 'The bakery is closed today. It opens on Monday.', school: 'No school today!', shops: 'The shops are closed today.' },
       noMeals: 'The fridge is empty. Let\'s buy food at the shops.',
       noToy: 'I don\'t have a toy yet. The toy stall has some!',
       notEnough: 'I need {n} more coins for that.',
@@ -699,7 +739,7 @@ const I18N = {
       icecream: 'Ice cream! Yum!',
       played: 'That was fun!',
       show: 'What a great show!',
-      arrived: { home: 'We\'re home.', bakery: 'We\'re at the bakery.', shops: 'We\'re at the shops.', park: 'We\'re at the park.' },
+      arrived: { home: 'We\'re home.', bakery: 'We\'re at the bakery.', school: 'We\'re at school.', shops: 'We\'re at the shops.', park: 'We\'re at the park.' },
       rested: 'We rested for half an hour. It\'s {t}.',
       bedtime: 'It\'s 9 o\'clock — bedtime!',
       late: 'It\'s 9 o\'clock! Straight home to bed.',
@@ -713,6 +753,30 @@ const I18N = {
       newPark: 'The park is open! Playing there is free.',
       newToys: 'The toy stall opened! Pick a wish and save coins.',
       bikeTravel: 'With my bike, travelling is fast and free!',
+      // ----- child mode: the routine, and what skipping it costs -----
+      ateBreakfast: 'Breakfast done! Now I have energy.',
+      gotDressed: 'All dressed! Now I can go out.',
+      brushedTeeth: 'Teeth all clean and shiny!',
+      ateLunch: 'Lunch done. That was yummy!',
+      washedHands: 'Hands washed. Clean for dinner!',
+      tidiedUp: 'Everything is tidy. That feels good!',
+      ateDinner: 'Dinner done. My tummy is happy.',
+      hadBath: 'Splash, splash! Bath time is fun.',
+      noBreakfast: 'I had no time for breakfast. My tummy hurts.',
+      noTeeth: 'No time to brush my teeth this morning.',
+      lateSchool: 'We are late for school! It is {t} already.',
+      playedOnWay: 'We left early, so we played on the way!',
+      dirtyHands: 'Dinner with dirty hands. Wash them next time!',
+      bedNoTeeth: 'Oh no, I forgot to brush my teeth.',
+      bedEarly: 'In bed on time! I will wake up at {t}.',
+      bedLate: 'So late! Now I will only wake up at {t}.',
+      wokeEarly: 'I woke up at {t}. Time to play before school!',
+      wokeLate: 'I went to bed late, so I woke at {t}.',
+      lowHealth: 'I do not feel very well. Let me look after myself.',
+      school: 'School all day! Home at half past five.',
+      schoolFirst: 'School until half past five. That is a long time!',
+      notDressed: 'I need to get dressed before we go out.',
+      schoolOver: 'School is over for today.',
       plan: {
         breakfast: 'Breakfast time! Let\'s cook and eat.',
         pack: 'Let\'s pack a lunchbox for the bakery.',
@@ -726,6 +790,14 @@ const I18N = {
         goHome: 'The day is ending. Let\'s go home.',
         dinner: 'Dinner time! Let\'s go home and eat.',
         sleep: 'Time to sleep.',
+        getReady: 'Time to get ready. Be quick and you can play!',
+        goSchool: 'Off to school! It is a short walk away.',
+        school: 'Morning at school. We go to the forest!',
+        lunchSchool: 'Lunch at school, with my friends.',
+        activities: 'Afternoon activities at school.',
+        tidyUp: 'Home! Wash your hands and tidy up.',
+        freeHome: 'Free time! Play until the next thing.',
+        bath: 'Bath time! Splashing about counts as playing.',
       },
     },
     time: {
@@ -737,6 +809,8 @@ const I18N = {
         return m === 30 ? `half past ${hh} ${p}` : `${hh} o'clock ${p}`;
       },
       sayDur: (min) => {
+        if (min === 15) return 'a quarter of an hour';
+        if (min === 45) return 'three quarters of an hour';
         if (min === 30) return 'half an hour';
         if (min === 60) return 'one hour';
         if (min % 60 === 30) return `${min / 60 | 0} and a half hours`;
@@ -754,19 +828,26 @@ const I18N = {
     intro: 'Um jogo para crianças pequenas sobre o tempo e o dinheiro: cada escolha demora tempo, o trabalho dá moedas, e as moedas compram o que é preciso — e às vezes o que se deseja.',
     pickFriend: 'Escolhe o teu amigo',
     play: 'Jogar', cont: 'Continuar', newGame: 'Jogo novo',
+    whoToday: 'Quem queres ser?',
+    modeChild: 'Uma criança', modeChildSub: 'Escola, brincar, hora de dormir',
+    modeAdult: 'Um adulto', modeAdultSub: 'Trabalho, compras, moedas',
+    wakeQ: 'Hoje acordámos tarde?',
+    wakeQEarly: 'Não, cedo — 7 horas', wakeQLate: 'Sim, tarde — 7 e meia',
     weekdays: ['Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado','Domingo'],
     dayN: 'Dia {n}',
     weekend: 'Fim de semana',
     partOfDay: { morning: 'manhã', afternoon: 'tarde', evening: 'fim da tarde', night: 'noite' },
-    tummy: 'Barriga', happy: 'Feliz', coins: 'Moedas', fridge: 'Frigorífico', lunchboxLabel: 'Lancheira', wish: 'O meu desejo', noWish: 'Ainda sem desejo',
+    tummy: 'Barriga', health: 'Saúde', happy: 'Feliz', coins: 'Moedas', fridge: 'Frigorífico', lunchboxLabel: 'Lancheira', wish: 'O meu desejo', noWish: 'Ainda sem desejo',
     nightLabel: 'Noite',
-    places: { home: 'Casa', bakery: 'Padaria', shops: 'Lojas', park: 'Parque' },
-    placeSub: { home: '', bakery: '', shops: '', park: '' },
-    placeWords: { home: 'casa', bakery: 'a padaria', shops: 'as lojas', park: 'o parque' },
+    places: { home: 'Casa', bakery: 'Padaria', school: 'Escola', shops: 'Lojas', park: 'Parque' },
+    placeSub: { home: '', bakery: '', school: '', shops: '', park: '' },
+    placeWords: { home: 'casa', bakery: 'a padaria', school: 'a escola', shops: 'as lojas', park: 'o parque' },
     planTitle: 'O plano de hoje', nowMarker: 'agora', planNow: 'Agora',
     plan: {
       breakfast: 'Pequeno-almoço em casa', pack: 'Preparar a lancheira', goWork: 'Ir para a padaria', work: 'Turno da manhã', work2: 'Turno da tarde', lunch: 'Pausa de almoço', shops: 'Comprar comida nas lojas', park: 'Brincar no parque',
       free: 'Brincar ou descansar em casa', goHome: 'Ir para casa', dinner: 'Jantar em casa', sleep: 'Dormir',
+      getReady: 'Preparar para a escola', goSchool: 'Ir a pé para a escola', school: 'Manhã na escola', lunchSchool: 'Almoço na escola',
+      activities: 'Atividades da tarde', tidyUp: 'Lavar as mãos e arrumar', freeHome: 'Brincar em casa', bath: 'Hora do banho',
     },
     planSay: 'Das {a} às {b}: {what}.',
     open: 'Aberto', closed: 'Fechado', opensAt: 'Abre às {t}', closedToday: 'Hoje está fechado', youAreHere: 'Estás aqui',
@@ -775,10 +856,13 @@ const I18N = {
       rest: 'Descansar', shop: 'Ver as bancas',
       restaurant: 'Comer no restaurante', play: 'Brincar no parque', icecream: 'Gelado', show: 'Teatro de fantoches',
       bed: 'Ir para a cama', sleep: 'Dormir', wake: 'Vamos!', sleepNow: 'Ir dormir',
+      breakfast: 'Tomar o pequeno-almoço', dress: 'Vestir-me', teethAM: 'Lavar os dentes', lunch: 'Almoçar',
+      wash: 'Lavar as mãos', tidy: 'Arrumar', dinner: 'Jantar', bath: 'Tomar banho', teethPM: 'Lavar os dentes',
+      playHome: 'Brincar', school: 'Escola até às {t}', schoolClosed: 'Escola',
     },
     say: {
       dur: 'Demora {d}.', costs: 'Custa {n}.', earns: 'Ganhas {n}.', free: 'É grátis.',
-      night: 'Ias dormir {d}.', locked: 'Agora não. {why}',
+      night: 'Ias dormir {d}.', wakeAt: 'Ias acordar às {t}.', locked: 'Agora não. {why}',
       goTo: 'Ir para {place}.',
     },
     travel: { title: 'Para onde?', how: 'Como vamos?', walk: 'A pé', bus: 'Autocarro', bike: 'Bicicleta', back: 'Voltar' },
@@ -788,13 +872,15 @@ const I18N = {
              ball: 'Bola', teddy: 'Urso de peluche', kite: 'Papagaio de papel', bike: 'Bicicleta', train: 'Comboio' },
     itemsA: { meals: 'comida para 6 refeições', hat: 'um chapéu de festa',
               ball: 'uma bola', teddy: 'um urso de peluche', kite: 'um papagaio de papel', bike: 'uma bicicleta', train: 'um comboio' },
-    why: { noMeals: 'Frigorífico vazio', noToy: 'Ainda sem brinquedos', starving: 'Come primeiro!', tooSad: 'Brinca primeiro!', lunchBreak: 'Pausa de almoço', shiftStarts: 'O turno começa às {t}', shiftOver: 'O turno acabou por hoje', notEnough: 'Faltam {n}' },
+    why: { noMeals: 'Frigorífico vazio', noToy: 'Ainda sem brinquedos', starving: 'Come primeiro!', tooSad: 'Brinca primeiro!', lunchBreak: 'Pausa de almoço', shiftStarts: 'O turno começa às {t}', shiftOver: 'O turno acabou por hoje', notEnough: 'Faltam {n}', notDressed: 'Veste-te primeiro!', schoolOver: 'A escola já acabou por hoje' },
     cats: { work: 'Trabalho', travel: 'Viagem', eat: 'Comer', play: 'Brincar', wait: 'Descansar', shop: 'Compras', sleep: 'Dormir' },
     summary: { title: 'O dia {n} acabou!', earned: 'Ganhei', spent: 'Gastei', saved: 'Guardei', wallet: 'Na carteira', howDay: 'Para onde foi o tempo', hoursN: '{h} h', halfHour: '½ h',
-      sleep: 'Esta noite durmo {d}', short: 'Uma noite curta — a dormir já!', rested: 'Uma noite bem longa!', extra: 'Sono extra: acordo mais feliz (😊 +{n})!' },
+      sleep: 'Esta noite durmo {d}', short: 'Uma noite curta — a dormir já!', rested: 'Uma noite bem longa!', extra: 'Sono extra: acordo mais feliz (😊 +{n})!',
+      wake: 'Amanhã acordo às {t}', wakeEarly: 'Fui para a cama a horas, por isso de manhã dá para brincar!', wakeLate: 'Fui tarde para a cama, por isso de manhã não dá para brincar.' },
     night: 'Boa noite… zzz', morning: 'Bom dia!', itIs: 'São {t}.',
     undo: 'Ups, voltar atrás',
     settings: { title: 'Adultos', hold: 'Mantém a roda premida para abrir', lang: 'Língua', clock: 'Relógio', clock24: '24 h', clock12: '12 h', sound: 'Sons', voice: 'Ler em voz alta', on: 'Ligado', off: 'Desligado', reset: 'Recomeçar', sure: 'Apagar tudo e começar no dia 1?', yes: 'Sim, recomeçar', no: 'Continuar a jogar', close: 'Fechar',
+      aboutChild: 'Um dia é uma jogada. Mantém qualquer carta premida para ouvires o que faz antes de acontecer; larga e acontece. O relógio anda de quarto em quarto de hora. A rotina — pequeno-almoço, vestir, dentes, lavar as mãos, arrumar, jantar, banho de dois em dois dias — é uma carta cada, e cada quarto de hora que leva é um quarto de hora que não se brinca. A escola é uma só carta, das oito e meia às cinco e meia. Sair sem tomar o pequeno-almoço ou sem lavar os dentes custa saúde, e chegar depois da campainha custa alegria. Ir para a cama às oito e meia significa acordar às sete com tempo para brincar antes da escola; mais tarde significa sete e meia e muita pressa. A semanada é uma moeda por manhã; as lojas abrem no dia 3, a banca dos brinquedos e os desejos no dia 4.',
       about: 'Um dia é uma jogada. Mantém o dedo num cartão para ouvir o que ele faz antes de acontecer; larga e acontece. Cada cartão mostra quanto tempo demora (relógios) e quantas moedas custa ou dá. O trabalho tem dois turnos, 9–13 e 13:30–17:30, e uma hora de trabalho é uma moeda. Não há trabalho ao fim de semana. A hora de dormir é às 9, mas pode-se ficar acordado em casa até à meia-noite; ir para a cama mais cedo dá uma noite mais longa e acordar mais feliz. Cada dia abre uma coisa nova: as lojas no dia 2, o parque no dia 3, a banca dos brinquedos e os desejos no dia 4.' },
     bubble: {
       morning: 'Bom dia! Hoje é {day}.',
@@ -812,8 +898,8 @@ const I18N = {
       cafe: 'Almoço no café. Que bom, mas custou 2 moedas.',
       packed: 'Lancheira pronta! Como-a na padaria.',
       lunchbox: 'A minha lancheira! Que bom, e não custou moedas.',
-      closed: { bakery: 'A padaria está fechada. Abre às {t}.', shops: 'As lojas estão fechadas. Abrem às {t}.' },
-      closedToday: { bakery: 'A padaria está fechada hoje. Abre na segunda-feira.', shops: 'As lojas estão fechadas hoje.' },
+      closed: { bakery: 'A padaria está fechada. Abre às {t}.', school: 'A escola está fechada. Abre às {t}.', shops: 'As lojas estão fechadas. Abrem às {t}.' },
+      closedToday: { bakery: 'A padaria está fechada hoje. Abre na segunda-feira.', school: 'Hoje não há escola!', shops: 'As lojas estão fechadas hoje.' },
       noMeals: 'O frigorífico está vazio. Vamos comprar comida nas lojas.',
       noToy: 'Ainda não tenho brinquedos. A banca dos brinquedos tem!',
       notEnough: 'Faltam-me {n} moedas para isso.',
@@ -826,7 +912,7 @@ const I18N = {
       icecream: 'Gelado! Que bom!',
       played: 'Foi divertido!',
       show: 'Que espetáculo tão bom!',
-      arrived: { home: 'Chegámos a casa.', bakery: 'Chegámos à padaria.', shops: 'Chegámos às lojas.', park: 'Chegámos ao parque.' },
+      arrived: { home: 'Chegámos a casa.', bakery: 'Chegámos à padaria.', school: 'Chegámos à escola.', shops: 'Chegámos às lojas.', park: 'Chegámos ao parque.' },
       rested: 'Descansámos meia hora. São {t}.',
       bedtime: 'São 9 horas — hora de dormir!',
       late: 'São 9 horas! Direitinho para casa e para a cama.',
@@ -839,7 +925,31 @@ const I18N = {
       newShops: 'As lojas abriram! Podemos comprar comida lá.',
       newPark: 'O parque abriu! Brincar lá é grátis.',
       newToys: 'A banca dos brinquedos abriu! Escolhe um desejo e poupa.',
-      bikeTravel: 'Com a bicicleta, viajar é rápido e grátis!',
+      bikeTravel: 'Com a minha bicicleta, viajar é rápido e grátis!',
+      // ----- modo criança: a rotina, e o que custa saltá-la -----
+      ateBreakfast: 'Pequeno-almoço feito! Agora tenho energia.',
+      gotDressed: 'Já estou vestido! Agora posso sair.',
+      brushedTeeth: 'Dentes lavados e a brilhar!',
+      ateLunch: 'Almoço feito. Que bom!',
+      washedHands: 'Mãos lavadas. Prontas para o jantar!',
+      tidiedUp: 'Está tudo arrumado. Sabe bem!',
+      ateDinner: 'Jantar feito. A barriga está contente.',
+      hadBath: 'Chape, chape! O banho é divertido.',
+      noBreakfast: 'Não tive tempo para o pequeno-almoço. Que fome.',
+      noTeeth: 'Não tive tempo de lavar os dentes de manhã.',
+      lateSchool: 'Estamos atrasados para a escola! Já são {t}.',
+      playedOnWay: 'Saímos cedo e brincámos pelo caminho!',
+      dirtyHands: 'Jantar com as mãos sujas. Lava-as para a próxima!',
+      bedNoTeeth: 'Ai não, esqueci-me de lavar os dentes.',
+      bedEarly: 'Na cama a horas! Vou acordar às {t}.',
+      bedLate: 'Tão tarde! Agora só vou acordar às {t}.',
+      wokeEarly: 'Acordei às {t}. Dá para brincar antes da escola!',
+      wokeLate: 'Fui para a cama tarde, por isso acordei às {t}.',
+      lowHealth: 'Não me sinto muito bem. Tenho de me cuidar.',
+      school: 'Escola o dia todo! Em casa às cinco e meia.',
+      schoolFirst: 'Escola até às cinco e meia. É muito tempo!',
+      notDressed: 'Tenho de me vestir antes de sair.',
+      schoolOver: 'A escola já acabou por hoje.',
       plan: {
         breakfast: 'Hora do pequeno-almoço! Vamos cozinhar e comer.',
         pack: 'Vamos preparar a lancheira para a padaria.',
@@ -853,6 +963,14 @@ const I18N = {
         goHome: 'O dia está a acabar. Vamos para casa.',
         dinner: 'Hora do jantar! Vamos para casa comer.',
         sleep: 'Hora de dormir.',
+        getReady: 'Hora de te preparares. Despacha-te e ainda brincas!',
+        goSchool: 'Vamos para a escola! É já ali.',
+        school: 'Manhã na escola. Vamos à floresta!',
+        lunchSchool: 'Almoço na escola, com os amigos.',
+        activities: 'Atividades da tarde na escola.',
+        tidyUp: 'Chegámos! Lava as mãos e arruma tudo.',
+        freeHome: 'Tempo livre! Brinca até à próxima coisa.',
+        bath: 'Hora do banho! Chapinhar também é brincar.',
       },
     },
     time: {
@@ -864,6 +982,8 @@ const I18N = {
         return m === 30 ? `${hh} e meia ${p}` : `${hh} ${p}`;
       },
       sayDur: (min) => {
+        if (min === 15) return 'um quarto de hora';
+        if (min === 45) return 'três quartos de hora';
         if (min === 30) return 'meia hora';
         if (min === 60) return 'uma hora';
         if (min % 60 === 30) return `${min / 60 | 0} horas e meia`;
@@ -893,12 +1013,40 @@ const TSEngine = (() => {
   const SHIFTS = [{ start: 9 * 60, end: 13 * 60 }, { start: 13 * 60 + 30, end: 17 * 60 + 30 }];
   const LUNCH_FROM = 13 * 60, LUNCH_TO = 13 * 60 + 30; // the bakery's lunch break
 
+  // ===== Child mode =====
+  // The child's day is the same clock with different fixed points. What a child actually decides is the order and the
+  // speed of the routine: eat, get dressed, brush teeth, wash hands, tidy up, bath — each one a card they press. The
+  // routine is not free: every quarter of an hour spent on it is a quarter of an hour not spent playing, and leaving
+  // home without breakfast or teeth costs health. Going to bed by 20:30 buys tomorrow's 7:00 wake-up (and a play slot
+  // before school); later means 7:30 and a scramble.
+  const CHILD_STEP = 15; // a child's routine happens in quarter hours; the adult day still moves in half hours
+  const CHILD = {
+    wakeEarly: 7 * 60, wakeLate: 7 * 60 + 30, goodBed: 20 * 60 + 30, latestBed: 22 * 60,
+    schoolIn: 8 * 60 + 30, schoolOut: 17 * 60 + 30, lunchAt: 12 * 60,
+    dinnerFrom: 18 * 60 + 30, eveningFrom: 19 * 60 + 30, bedFrom: 18 * 60 + 30, walk: 15, allowance: 1,
+    // You never wake up full: there is always room for the day's routine and play to fill the meters, and never so empty
+    // that yesterday sinks today. Health and happiness carry over between these two marks.
+    wakeFloor: 2, wakeCeiling: 4,
+  };
+  const CHORE = { // the mandatory routine: what each one takes and gives (health lives in state.tummy — one body meter)
+    breakfast: { emoji: '🥣', minutes: 15, tummy: 1, happy: 1, cat: 'eat', msg: 'ateBreakfast' },
+    dress:     { emoji: '👕', minutes: 15, msg: 'gotDressed' },
+    teethAM:   { emoji: '🪥', minutes: 15, tummy: 1, msg: 'brushedTeeth' },
+    lunch:     { emoji: '🍲', minutes: 30, tummy: 1, happy: 1, cat: 'eat', msg: 'ateLunch' }, // weekends: on school days lunch is at school
+    wash:      { emoji: '🧼', minutes: 15, tummy: 1, msg: 'washedHands' },
+    tidy:      { emoji: '🧹', minutes: 15, happy: 1, msg: 'tidiedUp' },
+    dinner:    { emoji: '🍽️', minutes: 30, tummy: 1, happy: 1, cat: 'eat', msg: 'ateDinner' },
+    bath:      { emoji: '🛁', minutes: 30, tummy: 1, happy: 2, cat: 'play', msg: 'hadBath' },
+    teethPM:   { emoji: '🪥', minutes: 15, tummy: 1, msg: 'brushedTeeth' },
+  };
+
   // One new thing per day, so day 1 is the smallest complete day: wake, eat, work, come home, eat, sleep.
   const PLACES = {
     home:   { emoji: '🏠', unlockDay: 1 },
-    bakery: { emoji: '🥖', unlockDay: 1, open: 8 * 60, close: 18 * 60, weekdaysOnly: true },
-    shops:  { emoji: '🏬', unlockDay: 2, open: 9 * 60, close: 18 * 60 },
-    park:   { emoji: '🌳', unlockDay: 3 },
+    bakery: { emoji: '🥖', unlockDay: 1, open: 8 * 60, close: 18 * 60, weekdaysOnly: true, mode: 'adult' },
+    school: { emoji: '🏫', unlockDay: 1, open: 8 * 60, close: 17 * 60 + 30, weekdaysOnly: true, mode: 'child' }, // doors open at 8:00; the bell is at 8:30
+    shops:  { emoji: '🏬', unlockDay: 2, childUnlockDay: 3, open: 9 * 60, close: 18 * 60 },
+    park:   { emoji: '🌳', unlockDay: 3, childUnlockDay: 2 },
   };
   const TRAVEL = {
     walk: { emoji: '🚶', min: 60, cost: 0, unlockDay: 1 },
@@ -922,10 +1070,23 @@ const TSEngine = (() => {
   const weekday = (day) => (day - 1) % 7;          // 0 = Monday
   const isWeekend = (day) => weekday(day) >= 5;
 
+  // Which game we are playing. Everything below that differs asks these, so adult mode is untouched by child mode.
+  const isChild = (s) => s.mode === 'child';
+  const stepOf = (s) => isChild(s) ? CHILD_STEP : STEP;
+  const slotsOf = (s) => (LATEST_BED - DAY_START) / stepOf(s);
+  const bedtimeOf = (s) => isChild(s) ? CHILD.goodBed : BEDTIME;   // when the game says "bed now"
+  const latestOf = (s) => isChild(s) ? CHILD.latestBed : LATEST_BED; // when you fall asleep whatever you were doing
+  const hungerOf = (s) => isChild(s) ? 0 : HUNGER_PER_STEP; // a child is fed by grown-ups: health moves at meals, not by the clock
+  const bathDay = (s) => s.day % 2 === 0;  // a bath every second day
+  const choreDone = (s, id) => !!(s.chores && s.chores[id]);
+  // Bed by 20:30 means waking at 7:00 with a spare quarter of an hour to play; later means 7:30 and no play before school.
+  const wakeAfter = (bedAt) => bedAt <= CHILD.goodBed ? CHILD.wakeEarly : CHILD.wakeLate;
+
   // The day's plan: where to be, hour by hour (hours may run past 24 for the night block).
   function routine(state) {
-    const wk = isWeekend(state.day), park = state.day >= PLACES.park.unlockDay, shops = state.day >= PLACES.shops.unlockDay;
     const b = (id, from, to, cat, place, emoji) => ({ id, from, to, cat, place, emoji });
+    if (isChild(state)) return childRoutine(state, b);
+    const wk = isWeekend(state.day), park = state.day >= PLACES.park.unlockDay, shops = state.day >= PLACES.shops.unlockDay;
     const day = wk ? [
       b('breakfast', 7, 7.5, 'eat', 'home', '🍳'),
       b('free', 7.5, 9, 'play', 'home', '🧸'),
@@ -950,24 +1111,50 @@ const TSEngine = (() => {
     day.push(b('sleep', 21, 31, 'sleep', 'home', '😴'));
     return day;
   }
+  // A child's plan. School is one card, but the strip still shows the shape of it — forest, lunch, activities — so the
+  // child can see where the day goes and how little of it is theirs.
+  function childRoutine(state, b) {
+    const wk = isWeekend(state.day), wake = (state.wake || CHILD.wakeEarly) / 60, park = unlocked(state, 'park');
+    const day = wk ? [
+      b('getReady', wake, 9, 'eat', 'home', '🥣'),
+      park ? b('park', 9, 12, 'play', 'park', '🌳') : b('freeHome', 9, 12, 'play', 'home', '🧸'),
+      b('lunch', 12, 13, 'eat', 'home', '🍽️'),
+      b('freeHome', 13, 18.5, 'play', 'home', '🧸'),
+    ] : [
+      b('getReady', wake, 8, 'eat', 'home', '🥣'),
+      b('goSchool', 8, 8.5, 'travel', 'school', '🚶'),
+      b('school', 8.5, 12, 'work', 'school', '🏫'),
+      b('lunchSchool', 12, 13, 'eat', 'school', '🍽️'),
+      b('activities', 13, 17.5, 'work', 'school', '🎨'),
+      b('goHome', 17.5, 17.75, 'travel', 'home', '🚶'),
+      b('tidyUp', 17.75, 18.5, 'wait', 'home', '🧼'),
+    ];
+    day.push(b('dinner', 18.5, 19.5, 'eat', 'home', '🍽️'));
+    day.push(bathDay(state) ? b('bath', 19.5, 20.5, 'play', 'home', '🛁') : b('freeHome', 19.5, 20.5, 'play', 'home', '🧸'));
+    day.push(b('sleep', 20.5, 31, 'sleep', 'home', '😴'));
+    return day;
+  }
   const bandAt = (state, time) => routine(state).find(x => time >= x.from * 60 && time < x.to * 60) || null;
   function planHint(state, out) {
-    if (state.time >= BEDTIME) return;
+    if (state.time >= bedtimeOf(state)) return;
     const band = bandAt(state, state.time); if (!band) return;
     if (state.lastBand === band.id) return;
     state.lastBand = band.id;
     out.msgs.push({ key: 'plan', band: band.id });
   }
 
-  function newGame(avatar, seed) {
+  function newGame(avatar, seed, mode) {
+    const child = mode === 'child';
     return {
-      v: 5, avatar: avatar || '🐻', seed: seed || 12345, // kept for saves and tests; nothing is random any more
+      v: 6, mode: child ? 'child' : 'adult',
+      avatar: avatar || '🐻', seed: seed || 12345, // kept for saves and tests; nothing is random any more
       day: 1, time: DAY_START, coins: 2, loc: 'home',
+      wake: DAY_START, chores: {}, // the child's wake-up time today, and which bits of the routine are done
       // The fridge starts with four meals: breakfast and dinner on days 1 and 2, so it runs out exactly when the shops open.
-      tummy: 3, happy: WAKE_HAPPY, fridge: 4, lunchbox: 0,
+      tummy: 3, happy: child ? 3 : WAKE_HAPPY, fridge: 4, lunchbox: 0,
       wardrobe: {}, toys: [], wish: null, wishReadyTold: false,
       timeline: [], today: freshToday(),
-      flags: {}, phase: 'day', msgs: [], lastBand: 'breakfast',
+      flags: {}, phase: 'day', msgs: [], lastBand: child ? 'getReady' : 'breakfast',
       totals: { earned: 0, spent: 0 },
       slept: 10 * 60, bedAt: null, // minutes slept last night, when we went to bed today
     };
@@ -983,11 +1170,13 @@ const TSEngine = (() => {
   // ---- sleep ----
   // What a night starting at bedAt does: minutes slept, and the happiness bonus for every full hour beyond what is needed.
   function nightMath(state, bedAt) {
-    const slept = DAY_START + 24 * 60 - bedAt;
+    // A child's night is the same length either way (bed 20:30 → up 7:00, bed 21:00 → up 7:30): a late bed does not cost
+    // sleep, it costs the morning. That is the whole lesson, so the bed card shows the wake-up time, not the hours.
+    const slept = (isChild(state) ? wakeAfter(bedAt) : DAY_START) + 24 * 60 - bedAt;
     const bonus = Math.min(BONUS_MAX, Math.floor(Math.max(0, slept - SLEEP_NEED) / 60) * BONUS_PER_HOUR);
     return { slept, need: SLEEP_NEED, short: Math.max(0, SLEEP_NEED - slept), bonus };
   }
-  const sleepIfBedNow = (state) => nightMath(state, Math.min(state.time, LATEST_BED));
+  const sleepIfBedNow = (state) => nightMath(state, Math.min(state.time, latestOf(state)));
 
   function isOpen(state, place, at) {
     const p = PLACES[place]; const t = at == null ? state.time : at;
@@ -996,34 +1185,48 @@ const TSEngine = (() => {
     if (p.open == null) return true;
     return t >= p.open && t < p.close;
   }
-  const unlocked = (state, place) => state.day >= PLACES[place].unlockDay;
+  const unlockDayOf = (state, place) => (isChild(state) && PLACES[place].childUnlockDay) || PLACES[place].unlockDay;
+  const unlocked = (state, place) => {
+    const p = PLACES[place];
+    if (p.mode && p.mode !== (isChild(state) ? 'child' : 'adult')) return false; // the bakery is the grown-up's, school is the child's
+    return state.day >= unlockDayOf(state, place);
+  };
   const stallOpen = (state, stall) => state.day >= STALL_UNLOCK[stall];
   const shiftAt = (time) => SHIFTS.find(s => time >= s.start && time < s.end) || null;
   const nextShift = (time) => SHIFTS.find(s => s.start > time) || null;
 
   // ---- time & needs ----
   function advance(state, minutes, cat, out) {
-    const from = state.time;
-    for (let i = 0; i < minutes / STEP; i++) {
-      if (state.time >= LATEST_BED) break; // midnight: whatever we were doing, we fall asleep
-      const slot = (state.time - DAY_START) / STEP;
-      if (slot >= 0 && slot < SLOTS) state.timeline[slot] = cat;
-      state.time += STEP;
-      state.tummy = clamp(state.tummy - HUNGER_PER_STEP, 0, TUMMY_MAX);
+    const from = state.time, step = stepOf(state), slots = slotsOf(state), last = latestOf(state), hunger = hungerOf(state);
+    for (let i = 0; i < minutes / step; i++) {
+      if (state.time >= last) break; // too late: whatever we were doing, we fall asleep
+      const slot = (state.time - DAY_START) / step;
+      if (slot >= 0 && slot < slots) state.timeline[slot] = cat;
+      state.time += step;
+      state.tummy = clamp(state.tummy - hunger, 0, TUMMY_MAX);
     }
     out.steps.push({ cat, from, to: state.time });
   }
   // With an empty tummy, an empty fridge and no way to buy food, the only way out is sleeping — so say that, instead of
   // "eat first", which would be advice for something the player cannot do.
   function foodTrapped(state) {
+    if (isChild(state)) return false; // in child mode meals are the grown-ups' job — there is always something to eat
     if (state.tummy > 0 || state.fridge > 0 || state.lunchbox) return false;
     const canBuyFood = stallOpen(state, 'food') && state.coins >= ITEMS.meals.price;
     const canEatOut = state.coins >= 2; // the café or the restaurant
     return !canBuyFood && !canEatOut;
   }
   function needHints(state, out) {
-    if (state.time >= BEDTIME && !state.flags.hBedtime) return; // the bedtime message takes over this once
+    if (state.time >= bedtimeOf(state) && !state.flags.hBedtime) return; // the bedtime message takes over this once
     let hinted = false;
+    if (isChild(state)) { // one body meter, called health: it only says something when it is getting low
+      if (state.tummy <= 2 && !state.flags.hLowHealth) { out.msgs.push({ key: 'lowHealth' }); state.flags.hLowHealth = true; hinted = true; }
+      if (!hinted && state.happy <= 1 && !state.flags.hBored) { out.msgs.push({ key: 'bored' }); state.flags.hBored = true; hinted = true; }
+      if (!hinted && state.wish && state.coins >= ITEMS[state.wish].price && !state.wishReadyTold) {
+        out.msgs.push({ key: 'wishReady', item: state.wish }); state.wishReadyTold = true;
+      }
+      return;
+    }
     if (foodTrapped(state) && !state.flags.hNoFood) { out.msgs.push({ key: 'nothingToEat' }); state.flags.hNoFood = true; hinted = true; }
     else if (state.tummy <= 0 && !state.flags.hStarving) { out.msgs.push({ key: 'starving' }); state.flags.hStarving = true; hinted = true; }
     else if (state.tummy <= 1 && state.tummy > 0 && !state.flags.hHungry) { out.msgs.push({ key: 'hungry' }); state.flags.hHungry = true; hinted = true; }
@@ -1033,25 +1236,31 @@ const TSEngine = (() => {
       out.msgs.push({ key: 'wishReady', item: state.wish }); state.wishReadyTold = true;
     }
   }
-  function ate(state, amount) { state.tummy = clamp(state.tummy + amount, 0, TUMMY_MAX); state.flags.hHungry = false; state.flags.hStarving = false; state.flags.hNoFood = false; }
+  function ate(state, amount) { state.tummy = clamp(state.tummy + amount, 0, TUMMY_MAX); state.flags.hHungry = false; state.flags.hStarving = false; state.flags.hNoFood = false; if (amount > 0) state.flags.hLowHealth = false; }
   function cheer(state, amount) { state.happy = clamp(state.happy + amount, 0, HAPPY_MAX); if (amount > 0) { state.flags.hBored = false; state.flags.hSad = false; } }
   function pay(state, n, out) { state.coins -= n; state.today.spent += n; state.totals.spent += n; out.coins -= n; }
   function earn(state, n, out) { if (!n) return; state.coins += n; state.today.earned += n; state.totals.earned += n; out.coins += n; }
 
+  const walkMin = (state) => isChild(state) ? CHILD.walk : TRAVEL.walk.min; // a child's world is close by: everything is a short walk
   function fallAsleep(state, out, key) { // the day is over
     out.msgs = out.msgs.filter(m => m.key !== 'rested');
     out.msgs.push({ key });
-    state.bedAt = Math.min(state.time, LATEST_BED); state.phase = 'summary'; out.bedtime = true;
+    state.bedAt = Math.min(state.time, latestOf(state));
+    if (isChild(state)) { // what tonight costs, said out loud, before the summary shows it
+      if (!choreDone(state, 'teethPM')) { state.tummy = clamp(state.tummy - 1, 0, TUMMY_MAX); state.happy = clamp(state.happy - 1, 0, HAPPY_MAX); out.msgs.push({ key: 'bedNoTeeth' }); }
+      out.msgs.push({ key: state.bedAt <= CHILD.goodBed ? 'bedEarly' : 'bedLate', t: wakeAfter(state.bedAt) });
+    }
+    state.phase = 'summary'; out.bedtime = true;
   }
   function checkBedtime(state, out) {
     if (state.phase !== 'day') return;
-    if (state.time >= BEDTIME && !state.flags.hBedtime) { // 21:00: bedtime, but staying up is allowed (at home)
+    if (state.time >= bedtimeOf(state) && !state.flags.hBedtime) { // bedtime, but staying up a little is allowed (at home)
       state.flags.hBedtime = true;
       out.msgs = out.msgs.filter(m => m.key !== 'rested');
-      if (state.loc !== 'home') { out.msgs.push({ key: 'late' }); advance(state, TRAVEL.walk.min, 'travel', out); state.loc = 'home'; }
+      if (state.loc !== 'home') { out.msgs.push({ key: 'late' }); advance(state, walkMin(state), 'travel', out); state.loc = 'home'; }
       else out.msgs.push({ key: 'bedtime' });
     }
-    if (state.time >= LATEST_BED) fallAsleep(state, out, 'midnight');
+    if (state.time >= latestOf(state)) fallAsleep(state, out, 'midnight');
   }
 
   // ---- actions ----
@@ -1063,6 +1272,7 @@ const TSEngine = (() => {
     const sadBlock = s.happy <= 0 ? { key: 'tooSad' } : null;
     const add = (a) => list.push(Object.assign({ enabled: true, cost: 0, earn: 0, minutes: 0, tummy: 0, happy: 0, fridge: 0 }, a));
     const lunchBreak = s.time >= LUNCH_FROM && s.time < LUNCH_TO, night = s.time >= BEDTIME;
+    if (isChild(s)) return childActions(s, list, add);
 
     if (s.loc === 'home') {
       add({ id: 'cook', emoji: '🍳', cat: 'eat', minutes: 30, tummy: 4, happy: 1, fridge: -1, enabled: s.fridge > 0, why: s.fridge > 0 ? null : { key: 'noMeals' } });
@@ -1102,6 +1312,67 @@ const TSEngine = (() => {
     return list;
   }
 
+  // The child's cards. Every bit of the routine is a card the child presses — that is the whole point: the routine costs
+  // time, and the time it costs is time not spent playing. Skipping one is allowed, and says so at the moment it bites.
+  function childActions(s, list, add) {
+    const wk = isWeekend(s.day), openNow = isOpen(s, s.loc);
+    const unwell = s.tummy <= 0 ? { key: 'lowHealth' } : null; // too poorly to play — eating and resting are what is left
+    const closedMsg = () => PLACES[s.loc].weekdaysOnly && wk ? { key: 'closedToday', place: s.loc } : { key: 'closed', place: s.loc, t: PLACES[s.loc].open };
+    const chore = (id) => { const c = CHORE[id]; add({ id, emoji: c.emoji, cat: c.cat || 'wait', minutes: c.minutes, tummy: c.tummy || 0, happy: c.happy || 0, chore: true }); };
+    const beforeSchool = s.time < CHILD.lunchAt, evening = choreDone(s, 'dinner') || s.time >= CHILD.eveningFrom;
+
+    if (s.loc === 'home') {
+      if (beforeSchool) { // the morning: three things to do and, if you are quick, time left over to play
+        if (!choreDone(s, 'breakfast')) chore('breakfast');
+        if (!choreDone(s, 'dress')) chore('dress');
+        if (!choreDone(s, 'teethAM')) chore('teethAM');
+      }
+      if (wk && !choreDone(s, 'lunch') && s.time >= CHILD.lunchAt && !choreDone(s, 'dinner')) chore('lunch');
+      if (!beforeSchool && !choreDone(s, 'dinner')) { // home from school: hands washed and the room tidied before dinner
+        if (!choreDone(s, 'wash')) chore('wash');
+        if (!choreDone(s, 'tidy')) chore('tidy');
+      }
+      if (!choreDone(s, 'dinner') && s.time >= CHILD.dinnerFrom) chore('dinner');
+      if (evening && bathDay(s) && !choreDone(s, 'bath')) chore('bath');
+      if (evening && !choreDone(s, 'teethPM')) chore('teethPM');
+      const toy = s.toys.length ? ITEMS[s.toys[s.toys.length - 1]].emoji : '🧸';
+      add({ id: 'playHome', emoji: toy, cat: 'play', minutes: 15, happy: 1, enabled: !unwell, why: unwell });
+    }
+    if (s.loc === 'school') { // school is one card: it is not a child's to spend
+      const minutes = Math.max(0, CHILD.schoolOut - s.time);
+      add({ id: 'school', emoji: '🏫', cat: 'work', minutes, until: CHILD.schoolOut, tummy: 1, happy: 1, // lunch and friends
+            enabled: openNow && minutes > 0, why: !openNow ? closedMsg() : { key: 'schoolOver' } });
+    }
+    if (s.loc === 'park') {
+      add({ id: 'play', emoji: '🛝', cat: 'play', minutes: 30, happy: 2, enabled: !unwell, why: unwell });
+      add({ id: 'icecream', emoji: '🍦', cat: 'eat', minutes: 30, cost: 1, happy: 1, tummy: 1, enabled: s.coins >= 1, why: { key: 'notEnough', n: 1 - s.coins } });
+      if (s.day >= SHOW_UNLOCK) add({ id: 'show', emoji: '🎭', cat: 'play', minutes: 60, cost: 2, happy: 3, enabled: s.coins >= 2, why: { key: 'notEnough', n: 2 - s.coins } });
+    }
+    if (s.loc === 'shops') add({ id: 'shop', emoji: '🛒', cat: 'shop', minutes: 30, enabled: openNow, why: openNow ? null : closedMsg(), sheet: true });
+    // The bed card says what tonight buys: bed by 20:30 wakes at 7:00 with time to play before school. It only appears in
+    // the evening — a grown-up may sleep a workday away, but for a child it would just be a big blue card to mis-tap.
+    if (s.loc === 'home' && s.time >= CHILD.bedFrom) {
+      const bedAt = Math.min(s.time, CHILD.latestBed), n = nightMath(s, bedAt);
+      add({ id: 'bed', emoji: '🛏️', cat: 'sleep', sleep: n.slept, sleepShort: bedAt > CHILD.goodBed, wake: wakeAfter(bedAt) });
+    }
+    // There must always be a card a child can press that is not a sheet: school is over, the shop is shut or is the only
+    // thing here, or we feel too poorly to play. Waiting a quarter of an hour is always allowed.
+    if (!list.some(a => a.enabled && !a.sheet)) add({ id: 'rest', emoji: '😌', cat: 'wait', minutes: 15 });
+    return list;
+  }
+
+  // The routine's consequences, said as cause and effect at the moment they land.
+  function choreOut(state, id, out) {
+    const c = CHORE[id];
+    state.chores[id] = true;
+    advance(state, c.minutes, c.cat || 'wait', out);
+    if (c.tummy) ate(state, c.tummy);
+    if (c.happy) cheer(state, c.happy);
+    if (id === 'dinner' && !choreDone(state, 'wash')) { state.tummy = clamp(state.tummy - 1, 0, TUMMY_MAX); out.msgs.push({ key: 'dirtyHands' }); }
+    else out.msgs.push({ key: c.msg });
+    return out;
+  }
+
   function perform(state, id) {
     const out = { ok: false, msgs: [], steps: [], coins: 0, bedtime: false };
     if (state.phase !== 'day') return out;
@@ -1109,7 +1380,14 @@ const TSEngine = (() => {
     if (!a || !a.enabled) { if (a && a.why) out.msgs.push(a.why); return out; }
     out.ok = true;
     const go = (cat) => advance(state, a.minutes, cat, out);
-    switch (id) {
+    if (CHORE[id]) choreOut(state, id, out);
+    else switch (id) {
+      case 'playHome': go('play'); cheer(state, 1); out.msgs.push({ key: 'played' }); break;
+      case 'school': {
+        advance(state, a.minutes, 'work', out); ate(state, a.tummy); cheer(state, a.happy);
+        out.msgs.push({ key: state.flags.firstSchool ? 'school' : 'schoolFirst', t: CHILD.schoolOut });
+        state.flags.firstSchool = true; break;
+      }
       case 'cook': state.fridge -= 1; go('eat'); ate(state, 4); cheer(state, 1); out.msgs.push({ key: 'ate' }); break;
       case 'pack': state.fridge -= 1; state.lunchbox = 1; go('eat'); out.msgs.push({ key: 'packed' }); break;
       case 'lunchbox': state.lunchbox = 0; go('eat'); ate(state, 4); cheer(state, 1); out.msgs.push({ key: 'lunchbox' }); break;
@@ -1136,6 +1414,7 @@ const TSEngine = (() => {
   }
 
   function travelOptions(state) {
+    if (isChild(state)) return [{ mode: 'walk', emoji: '🚶', minutes: CHILD.walk, cost: 0, enabled: true, why: null }]; // everything is a short walk away
     return Object.keys(TRAVEL).map(mode => {
       const t = TRAVEL[mode];
       const owned = !t.needs || state.toys.includes(t.needs);
@@ -1143,7 +1422,7 @@ const TSEngine = (() => {
                hidden: !owned || state.day < t.unlockDay, why: state.coins < t.cost ? { key: 'notEnough', n: t.cost - state.coins } : null };
     }).filter(o => !o.hidden);
   }
-  const isNight = (state) => state.time >= BEDTIME; // after 21:00 we stay home
+  const isNight = (state) => state.time >= bedtimeOf(state); // after bedtime we stay home
   function destinations(state) {
     const night = isNight(state);
     return Object.keys(PLACES).filter(p => unlocked(state, p)).map(p => ({
@@ -1155,6 +1434,7 @@ const TSEngine = (() => {
     const out = { ok: false, msgs: [], steps: [], coins: 0, bedtime: false };
     if (state.phase !== 'day' || dest === state.loc || !unlocked(state, dest)) return out;
     if (isNight(state)) { out.msgs.push({ key: 'nightStayHome' }); return out; }
+    if (isChild(state) && state.loc === 'home' && !choreDone(state, 'dress')) { out.msgs.push({ key: 'notDressed' }); return out; }
     const opt = travelOptions(state).find(o => o.mode === mode);
     if (!opt || !opt.enabled) { if (opt && opt.why) out.msgs.push(opt.why); return out; }
     out.ok = true;
@@ -1162,11 +1442,22 @@ const TSEngine = (() => {
     advance(state, opt.minutes, 'travel', out);
     state.loc = dest;
     out.msgs.push({ key: 'arrived', place: dest });
+    if (isChild(state) && dest === 'school') schoolArrival(state, out);
     if (mode === 'bike' && !state.flags.bikeTold) { out.msgs.push({ key: 'bikeTravel' }); state.flags.bikeTold = true; }
     needHints(state, out);
     planHint(state, out);
     checkBedtime(state, out);
     return out;
+  }
+
+  // Getting to school is where the morning is paid for: what you skipped, and whether there was time to dawdle.
+  function schoolArrival(state, out) {
+    if (state.flags.schoolToday) return;
+    state.flags.schoolToday = true;
+    if (!choreDone(state, 'breakfast')) { state.tummy = clamp(state.tummy - 2, 0, TUMMY_MAX); state.happy = clamp(state.happy - 1, 0, HAPPY_MAX); out.msgs.push({ key: 'noBreakfast' }); }
+    if (!choreDone(state, 'teethAM')) { state.tummy = clamp(state.tummy - 1, 0, TUMMY_MAX); out.msgs.push({ key: 'noTeeth' }); }
+    if (state.time > CHILD.schoolIn) { state.happy = clamp(state.happy - 1, 0, HAPPY_MAX); out.msgs.push({ key: 'lateSchool', t: state.time }); }
+    else if (state.time < CHILD.schoolIn) { cheer(state, 1); out.msgs.push({ key: 'playedOnWay' }); } // left early: a slow walk with time to play
   }
 
   function catalogue(state, stall) {
@@ -1207,34 +1498,48 @@ const TSEngine = (() => {
 
   // ---- day / night ----
   function summary(state) {
-    const byCat = {}; state.timeline.forEach(c => { if (c) byCat[c] = (byCat[c] || 0) + STEP; });
-    const bedAt = state.bedAt == null ? BEDTIME : state.bedAt, n = nightMath(state, bedAt);
+    const byCat = {}, step = stepOf(state); state.timeline.forEach(c => { if (c) byCat[c] = (byCat[c] || 0) + step; });
+    const bedAt = state.bedAt == null ? bedtimeOf(state) : state.bedAt, n = nightMath(state, bedAt);
     byCat.sleep = n.slept;
     return { day: state.day, weekday: weekday(state.day), earned: state.today.earned, spent: state.today.spent,
              kept: state.today.earned - state.today.spent, wallet: state.coins, byCat,
-             timeline: state.timeline.slice(0, SLOTS),
-             bedAt, slept: n.slept, short: n.short, bonus: n.bonus };
+             timeline: state.timeline.slice(0, slotsOf(state)),
+             bedAt, slept: n.slept, short: n.short, bonus: n.bonus, wake: isChild(state) ? wakeAfter(bedAt) : DAY_START };
   }
   function goToSleep(state) { // summary -> night
     if (state.phase !== 'summary') return false;
-    if (state.bedAt == null) state.bedAt = Math.min(Math.max(state.time, BEDTIME), LATEST_BED);
+    if (state.bedAt == null) state.bedAt = Math.min(Math.max(state.time, bedtimeOf(state)), latestOf(state));
     const n = nightMath(state, state.bedAt);
     state.slept = n.slept; state.sleepBonus = n.bonus;
+    // A child gets no happiness bonus for a long night — the reward for going to bed on time is tomorrow morning itself.
+    if (isChild(state)) { state.wakeNext = wakeAfter(state.bedAt); state.sleepBonus = 0; }
     state.phase = 'night'; return true;
   }
   function wakeUp(state) { // night -> new day
     if (state.phase !== 'night') return null;
+    const child = isChild(state);
     state.day += 1; state.time = DAY_START; state.loc = 'home';
     const bonus = state.sleepBonus || 0; state.sleepBonus = 0;
-    state.tummy = WAKE_TUMMY; state.happy = clamp(Math.max(WAKE_HAPPY, state.happy) + bonus, 0, HAPPY_MAX); // extra sleep = happier morning
+    if (!child) state.tummy = WAKE_TUMMY;
+    state.happy = clamp(Math.max(WAKE_HAPPY, state.happy) + bonus, 0, HAPPY_MAX); // extra sleep = happier morning
     state.timeline = []; state.today = freshToday(); state.lunchbox = 0; state.bedAt = null;
     state.flags.hHungry = state.flags.hStarving = state.flags.hBored = state.flags.hSad = state.flags.hNoFood = false;
     state.flags.hBedtime = false;
+    if (child) { // last night decides this morning: bed by 20:30 wakes at 7:00, later at 7:30 — the day bar shows the difference
+      state.wake = state.wakeNext || CHILD.wakeEarly; state.wakeNext = null; state.time = state.wake;
+      const step = stepOf(state);
+      for (let i = 0; i < (state.wake - DAY_START) / step; i++) state.timeline[i] = 'sleep';
+      state.chores = {}; state.flags.schoolToday = false; state.flags.hLowHealth = false; state.flags.firstSchool = state.flags.firstSchool;
+      state.tummy = clamp(state.tummy, CHILD.wakeFloor, CHILD.wakeCeiling); // yesterday carries over, between a floor and a ceiling
+      state.happy = clamp(state.happy, CHILD.wakeFloor + 1, CHILD.wakeCeiling);
+      state.coins += CHILD.allowance;                                   // pocket money: coins come from grown-ups, not from work
+    }
     state.phase = 'day';
     const msgs = [{ key: 'morning', day: state.day }];
+    if (child) msgs.push({ key: state.wake <= CHILD.wakeEarly ? 'wokeEarly' : 'wokeLate', t: state.wake });
     if (isWeekend(state.day)) msgs.push({ key: 'weekendMorning' });
-    if (state.day === PLACES.shops.unlockDay) msgs.push({ key: 'newShops' });
-    if (state.day === PLACES.park.unlockDay) msgs.push({ key: 'newPark' });
+    if (state.day === unlockDayOf(state, 'shops')) msgs.push({ key: 'newShops' });
+    if (state.day === unlockDayOf(state, 'park')) msgs.push({ key: 'newPark' });
     if (state.day === STALL_UNLOCK.toys) msgs.push({ key: 'newToys' });
     if (bonus > 0) msgs.push({ key: 'sleptExtra', n: bonus });
     const first = routine(state)[0].id; state.lastBand = first; msgs.push({ key: 'plan', band: first });
@@ -1242,6 +1547,7 @@ const TSEngine = (() => {
   }
 
   return { DAY_START, BEDTIME, LATEST_BED, SLEEP_NEED, BONUS_PER_HOUR, BONUS_MAX, STEP, SLOTS, TUMMY_MAX, HAPPY_MAX, PLACES, TRAVEL, ITEMS, CAT_COLORS, STALL_UNLOCK, LUNCHBOX_FROM, FRIDGE_MAX, LUNCH_FROM, LUNCH_TO, WORK_PAY, SHIFTS, HUNGER_PER_STEP,
+           CHILD, CHILD_STEP, CHORE, isChild, stepOf, slotsOf, bedtimeOf, latestOf, hungerOf, bathDay, choreDone, wakeAfter, walkMin,
            newGame, timeInfo, isOpen, isWeekend, weekday, unlocked, stallOpen, actions, perform, travelOptions, destinations,
            travel, catalogue, buy, setWish, summary, goToSleep, wakeUp, routine, bandAt, shiftAt, nightMath, foodTrapped, isNight };
 })();
@@ -1265,7 +1571,7 @@ if (typeof module !== 'undefined') module.exports = TSEngine;
   };
   const defaultLang = () => (navigator.language || 'en').toLowerCase().startsWith('pt') ? 'pt' : 'en';
   // 12 h by default: the big clock face only has 1–12 on it, so "13:00" beside it would be a second system to learn.
-  const settings = Object.assign({ lang: defaultLang(), clock24: false, sound: true, voice: true, avatar: '🐻' }, store.get(SET_KEY) || {});
+  const settings = Object.assign({ lang: defaultLang(), clock24: false, sound: true, voice: true, avatar: '🐻', mode: 'child' }, store.get(SET_KEY) || {});
   const saveSettings = () => store.set(SET_KEY, settings);
 
   let S = null;            // game state (engine-owned shape)
@@ -1342,9 +1648,10 @@ if (typeof module !== 'undefined') module.exports = TSEngine;
     const disc = (h) => h
       ? `<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="#fff" stroke="#33241A" stroke-width="2"/><path d="M10,10 L10,2 A8,8 0 0 1 10,18 Z" fill="#F6C445"/><circle cx="10" cy="10" r="1.5" fill="#33241A"/></svg>`
       : `<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="#F6C445" stroke="#33241A" stroke-width="2"/><circle cx="10" cy="10" r="1.5" fill="#33241A"/><path d="M10,10 L10,3.5" stroke="#33241A" stroke-width="2" stroke-linecap="round"/></svg>`;
-    const full = Math.floor(min / 60), half = (min % 60) >= 30;
+    const quarter = `<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="#fff" stroke="#33241A" stroke-width="2"/><path d="M10,10 L10,2 A8,8 0 0 1 18,10 Z" fill="#F6C445"/><circle cx="10" cy="10" r="1.5" fill="#33241A"/></svg>`;
+    const full = Math.floor(min / 60), rest = min % 60;
     for (let i = 0; i < Math.min(full, 12); i++) html += disc(false);
-    if (half) html += disc(true);
+    if (rest >= 30) html += disc(true); else if (rest >= 15) html += quarter;
     return html + '</span>';
   }
   const fmtH = (min) => `${Math.floor(min / 60)}${min % 60 >= 30 ? '½' : ''} h`;
@@ -1359,14 +1666,16 @@ if (typeof module !== 'undefined') module.exports = TSEngine;
   // ---------- what the voice says about a card, before it does anything ----------
   function actLabel(a) {
     const Lx = L();
-    return a.id === 'work' ? (a.until && a.enabled ? fmt(Lx.act.work, { t: fmtTime(a.until) }) : Lx.act.workClosed) : Lx.act[a.id];
+    if (a.id === 'work') return a.until && a.enabled ? fmt(Lx.act.work, { t: fmtTime(a.until) }) : Lx.act.workClosed;
+    if (a.id === 'school') return a.until && a.enabled ? fmt(Lx.act.school, { t: fmtTime(a.until) }) : Lx.act.schoolClosed;
+    return Lx.act[a.id];
   }
   function sayAction(a) {
     const Lx = L(), parts = [];
-    const label = a.id === 'work' && a.until && a.enabled ? fmt(Lx.act.work, { t: sayTime(a.until) }) : actLabel(a);
+    const label = (a.id === 'work' || a.id === 'school') && a.until && a.enabled ? fmt(Lx.act[a.id], { t: sayTime(a.until) }) : actLabel(a);
     parts.push(label + '.');
     if (!a.enabled) { if (a.why) parts.push(fmt(Lx.say.locked, { why: whyShort(a.why) })); return parts.join(' '); }
-    if (a.id === 'bed') parts.push(fmt(Lx.say.night, { d: Lx.time.sayDur(a.sleep) }));
+    if (a.id === 'bed') parts.push(a.wake != null ? fmt(Lx.say.wakeAt, { t: sayTime(a.wake) }) : fmt(Lx.say.night, { d: Lx.time.sayDur(a.sleep) }));
     if (a.minutes) parts.push(fmt(Lx.say.dur, { d: Lx.time.sayDur(a.minutes) }));
     const net = (a.earn || 0) - (a.cost || 0);
     if (net > 0) parts.push(fmt(Lx.say.earns, { n: Lx.coinsN(net) }));
@@ -1408,9 +1717,10 @@ if (typeof module !== 'undefined') module.exports = TSEngine;
   // ---------- sky ----------
   function setSky(time, dur) {
     const sky = $('sky'); const clamp = (v) => Math.max(0, Math.min(1, v));
-    const dayOp = clamp(Math.min((time - 420) / 60, (E.BEDTIME - time) / 120));
-    const nightOp = time >= E.BEDTIME - 30 ? clamp((time - (E.BEDTIME - 30)) / 60) : clamp((420 - time) / 60);
-    const p = clamp((time - 420) / (E.BEDTIME - 420)), ang = Math.PI - p * Math.PI;
+    const bed = S ? E.bedtimeOf(S) : E.BEDTIME; // dusk falls at the mode's bedtime
+    const dayOp = clamp(Math.min((time - 420) / 60, (bed - time) / 120));
+    const nightOp = time >= bed - 30 ? clamp((time - (bed - 30)) / 60) : clamp((420 - time) / 60);
+    const p = clamp((time - 420) / (bed - 420)), ang = Math.PI - p * Math.PI;
     const sx = 50 + 42 * Math.cos(ang), sy = 84 - 72 * Math.sin(ang);
     const d = (dur || 1) + 's';
     sky.querySelector('.day').style.opacity = dayOp; sky.querySelector('.dusk').style.opacity = 1 - dayOp;
@@ -1427,29 +1737,35 @@ if (typeof module !== 'undefined') module.exports = TSEngine;
   }
 
   // ---------- day bar: 24 hours from 7:00, the plan for the day (+ a preview of the next action) ----------
-  // Cells after the usual 21:00 bedtime are "late" (playable until midnight); from the real bedtime (bedAt, else midnight) on, the night is dark.
-  const BED_HOUR = (E.BEDTIME - E.DAY_START) / 60, LATEST_HOUR = (E.LATEST_BED - E.DAY_START) / 60; // 14, 17
+  // Cells after the mode's bedtime are "late" (you may still stay up); from the real bedtime (bedAt) on, the night is dark.
+  // Each hour is split into as many pieces as the mode's step: halves for a grown-up, quarters for a child, whose
+  // routine happens in fifteen-minute bites.
   function renderDayBar(container, timeline, time, bands, preview, bedAt) {
+    const step = S ? E.stepOf(S) : E.STEP, per = 60 / step, slots = S ? E.slotsOf(S) : E.SLOTS;
+    const bedHour = ((S ? E.bedtimeOf(S) : E.BEDTIME) - E.DAY_START) / 60, latestHour = ((S ? E.latestOf(S) : E.LATEST_BED) - E.DAY_START) / 60;
     const col = (c) => c ? E.CAT_COLORS[c] : 'transparent';
     const pv = {}; // slot -> cat for the preview
-    if (preview && time != null) for (let i = 0; i < preview.minutes / E.STEP; i++) { const slot = (time - E.DAY_START) / E.STEP + i; if (slot >= 0 && slot < E.SLOTS && !timeline[slot]) pv[slot] = preview.cat; }
-    const nightSlot = bedAt != null ? (bedAt - E.DAY_START) / E.STEP : E.SLOTS; // first half-hour that is asleep
+    if (preview && time != null) for (let i = 0; i < preview.minutes / step; i++) { const slot = (time - E.DAY_START) / step + i; if (slot >= 0 && slot < slots && !timeline[slot]) pv[slot] = preview.cat; }
+    const nightSlot = bedAt != null ? (bedAt - E.DAY_START) / step : slots; // first piece of the day that is asleep
     const NIGHT = 'var(--night-2)';
-    const half = (slot) => slot >= nightSlot ? NIGHT : timeline[slot] ? col(timeline[slot]) : 'transparent';
+    const piece = (slot) => slot >= nightSlot ? NIGHT : timeline[slot] ? col(timeline[slot]) : 'transparent';
     let cells = '';
     for (let i = 0; i < 24; i++) {
-      const s0 = i * 2;
-      if (s0 >= nightSlot || i >= LATEST_HOUR) { cells += '<i class="c night"></i>'; continue; }
-      const pa = pv[s0] != null && !timeline[s0], pb = pv[s0 + 1] != null && !timeline[s0 + 1];
-      const bg = (x, isPv) => isPv ? `repeating-linear-gradient(135deg, ${E.CAT_COLORS[pv[x]]} 0 3px, rgba(255,255,255,.55) 3px 6px)` : half(x);
-      cells += `<i class="c${pa || pb ? ' pv' : ''}${i >= BED_HOUR ? ' late' : ''}"><b style="background:${bg(s0, pa)}"></b><b style="background:${bg(s0 + 1, pb)}"></b></i>`;
+      const s0 = i * per;
+      if (s0 >= nightSlot || i >= latestHour) { cells += '<i class="c night"></i>'; continue; }
+      let inner = '', anyPv = false;
+      for (let k = 0; k < per; k++) {
+        const x = s0 + k, isPv = pv[x] != null && !timeline[x]; if (isPv) anyPv = true;
+        inner += `<b style="background:${isPv ? `repeating-linear-gradient(135deg, ${E.CAT_COLORS[pv[x]]} 0 3px, rgba(255,255,255,.55) 3px 6px)` : piece(x)}"></b>`;
+      }
+      cells += `<i class="c${anyPv ? ' pv' : ''}${i >= bedHour ? ' late' : ''}">${inner}</i>`;
     }
     // The whole strip is one target that reads out what is happening now — ten separate 7 px bands were untappable.
     const plan = (bands || []).map(b => `<span class="band" style="left:${((b.from - 7) / 24 * 100).toFixed(2)}%;width:${((b.to - b.from) / 24 * 100).toFixed(2)}%;background:${E.CAT_COLORS[b.cat]}"><em>${b.emoji}</em></span>`).join('');
 
     // The bar spans a whole day, so 12 h numbers would repeat (7, 9, 11, 1, 3, 5, 7, 9 …) and mean nothing.
     // Three pictures say the same thing to a child who cannot read a clock yet: get up, midday, bedtime.
-    const MARKS = [[0, '🌅'], [5, '☀️'], [(E.BEDTIME - E.DAY_START) / 60, '🌙']];
+    const MARKS = [[0, '🌅'], [5, '☀️'], [((S ? E.bedtimeOf(S) : E.BEDTIME) - E.DAY_START) / 60, '🌙']];
     const labels = MARKS.map(([i, ico]) => `<span style="left:${(i / 24 * 100).toFixed(2)}%${i ? '' : ';transform:none'}">${ico}</span>`).join('');
     const pct = (tt) => Math.min(100, Math.max(0, (tt - E.DAY_START) / 1440 * 100)).toFixed(2);
     let markers = '';
@@ -1478,6 +1794,8 @@ if (typeof module !== 'undefined') module.exports = TSEngine;
   function applyI18n() {
     document.querySelectorAll('[data-i18n]').forEach(el => { const v = t(el.dataset.i18n); if (typeof v === 'string') el.textContent = v; });
     $('btnPlay').textContent = t('play'); $('btnContinue').textContent = t('cont'); $('btnNew').textContent = t('newGame');
+    $('btnWakeEarly').textContent = t('wakeQEarly'); $('btnWakeLate').textContent = t('wakeQLate');
+    document.querySelectorAll('#modePick .mode-btn').forEach(b => b.setAttribute('aria-pressed', b.dataset.mode === settings.mode));
     $('btnSleep').textContent = '😴 ' + t('act.sleep'); $('btnWake').textContent = t('act.wake');
     $('travelTitle').textContent = t('travel.title'); $('travelHow').textContent = t('travel.how'); $('shopTitle').textContent = t('act.shop');
     $('nightText').textContent = t('night'); $('btnUndo').textContent = '↩ ' + t('undo');
@@ -1486,6 +1804,7 @@ if (typeof module !== 'undefined') module.exports = TSEngine;
     document.querySelectorAll('#setSound button').forEach(b => b.setAttribute('aria-pressed', (b.dataset.v === '1') === settings.sound));
     document.querySelectorAll('#setVoice button').forEach(b => b.setAttribute('aria-pressed', (b.dataset.v === '1') === settings.voice));
     $('speakBtn').classList.toggle('on', settings.voice);
+    $('settings').querySelector('.about').textContent = t(E.isChild(S || { mode: settings.mode }) ? 'settings.aboutChild' : 'settings.about');
     document.documentElement.lang = settings.lang;
   }
 
@@ -1509,7 +1828,10 @@ if (typeof module !== 'undefined') module.exports = TSEngine;
   }
   function pvd(el, delta) { const b = el.querySelector('.pvd'); if (!b) return; if (!delta) { b.classList.add('hidden'); b.textContent = ''; return; } b.classList.remove('hidden'); b.textContent = (delta > 0 ? '+' : '−') + Math.abs(delta); b.classList.toggle('down', delta < 0); }
   function renderMeters(pv) {
-    const dT = pv ? (pv.tummy || 0) - (pv.minutes || 0) * (E.HUNGER_PER_STEP / E.STEP) : 0;
+    const child = E.isChild(S);
+    $('tummyIco').textContent = child ? '❤️' : '🍎'; $('tummyLab').textContent = t(child ? 'health' : 'tummy');
+    $('game').querySelector('.meters').classList.toggle('nofridge', child);
+    const dT = pv ? (pv.tummy || 0) - (pv.minutes || 0) * (E.hungerOf(S) / E.stepOf(S)) : 0;
     const dH = pv ? (pv.happy || 0) : 0, dF = pv ? (pv.fridge || 0) : 0;
     const cT = Math.ceil(S.tummy), aT = Math.ceil(clampv(S.tummy + dT, 0, E.TUMMY_MAX));
     const cH = Math.ceil(S.happy), aH = Math.ceil(clampv(S.happy + dH, 0, E.HAPPY_MAX));
@@ -1580,10 +1902,14 @@ if (typeof module !== 'undefined') module.exports = TSEngine;
       const label = actLabel(a);
       let chips = '';
       if (a.minutes) chips += timeDiscs(a.minutes);
-      if (a.id === 'bed') chips += `<span class="cchip ${a.sleepShort ? 'spend' : 'free'}">😴 ${fmtH(a.sleep)}</span>`; // how long the night would be, then the happiness bonus
+      // For a grown-up the bed card shows how long the night would be; for a child it shows the morning that night buys,
+      // because the night is the same length either way — what a late bed costs is play time tomorrow.
+      if (a.id === 'bed') chips += a.wake != null
+        ? `<span class="cchip ${a.sleepShort ? 'spend' : 'free'}">${a.sleepShort ? '😴' : '🌅'} ${fmtTime(a.wake)}</span>`
+        : `<span class="cchip ${a.sleepShort ? 'spend' : 'free'}">😴 ${fmtH(a.sleep)}</span>`;
       const coin = (a.earn || 0) - (a.cost || 0);
       if (coin) chips += effChip(COIN_ICO, coin);
-      const other = [['🍎', a.tummy], ['😊', a.happy], ['🧺', a.fridge]].filter(c => Math.abs(c[1]) >= 1).sort((x, y) => Math.abs(y[1]) - Math.abs(x[1]))[0];
+      const other = [[E.isChild(S) ? '❤️' : '🍎', a.tummy], ['😊', a.happy], ['🧺', a.fridge]].filter(c => Math.abs(c[1]) >= 1).sort((x, y) => Math.abs(y[1]) - Math.abs(x[1]))[0];
       if (other) chips += effChip(other[0], other[1]);
       if (a.id === 'shop') chips = `<span class="mchip">${['food', 'toys'].filter(st => E.stallOpen(S, st)).map(st => ({ food: '🥕', toys: '🧸' })[st]).join(' ')}</span>` + chips;
       const why = !a.enabled && a.why ? `<div class="why">${whyShort(a.why)}</div>` : '';
@@ -1659,13 +1985,13 @@ if (typeof module !== 'undefined') module.exports = TSEngine;
   // ---------- performing actions ----------
   function animateTime(fromAbs, toAbs, steps) {
     return new Promise(res => {
-      const n = Math.max(1, Math.round((toAbs - fromAbs) / E.STEP)); const dur = Math.min(0.4 * n, 2.0);
+      const step = E.stepOf(S); const n = Math.max(1, Math.round((toAbs - fromAbs) / step)); const dur = Math.min(0.4 * n, 2.0);
       const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
       ['cHour', 'cMin'].forEach(id => { $(id).style.transition = `transform ${reduce ? .2 : dur}s cubic-bezier(.45,0,.35,1)`; });
       setClock('c', toAbs, true); shownTime = toAbs;
       const time = toAbs - (S.day - 1) * 1440; setSky(time, dur);
-      for (let i = 1; i <= n; i++) setTimeout(() => { SFX.tick(); const tt = time - (n - i) * E.STEP; $('digital').textContent = fmtTime(tt); const inf = E.timeInfo(tt); $('partTxt').textContent = L().partOfDay[inf.part]; $('partIco').textContent = PART_EMOJI[inf.part];
-        const slot = (tt - E.DAY_START) / E.STEP; renderDayBar($('daybar'), S.timeline.slice(0, Math.max(0, slot)), tt, E.routine(S)); }, (i / n) * dur * 1000);
+      for (let i = 1; i <= n; i++) setTimeout(() => { SFX.tick(); const tt = time - (n - i) * step; $('digital').textContent = fmtTime(tt); const inf = E.timeInfo(tt); $('partTxt').textContent = L().partOfDay[inf.part]; $('partIco').textContent = PART_EMOJI[inf.part];
+        const slot = (tt - E.DAY_START) / step; renderDayBar($('daybar'), S.timeline.slice(0, Math.max(0, slot)), tt, E.routine(S)); }, (i / n) * dur * 1000);
       setTimeout(res, dur * 1000 + 80);
     });
   }
@@ -1764,10 +2090,13 @@ if (typeof module !== 'undefined') module.exports = TSEngine;
     renderDayBar($('sumBar'), sum.timeline, null, E.routine(S), null, sum.bedAt);
     const order = ['work', 'travel', 'eat', 'play', 'shop', 'wait', 'sleep'];
     $('sumLegend').innerHTML = order.filter(c => sum.byCat[c]).map(c => `<div${c === 'sleep' ? ' class="wide"' : ''}><span class="sw" style="background:${E.CAT_COLORS[c]}"></span><span>${Lx.cats[c]}</span>${timeDiscs(sum.byCat[c])}</div>`).join('');
-    const sd = Lx.time.sayDur; let verdict = sum.short ? Lx.summary.short : Lx.summary.rested;
-    if (sum.bonus) verdict += ' ' + fmt(Lx.summary.extra, { n: sum.bonus });
-    const ss = $('sumSleep'); ss.classList.toggle('bad', sum.short > 0);
-    ss.innerHTML = `<span class="fe">${sum.short ? '🌙' : '😴'}</span><span class="ft"><b>${fmt(Lx.summary.sleep, { d: sd(sum.slept) })}</b><br>${verdict}</span>`;
+    const sd = Lx.time.sayDur, child = E.isChild(S);
+    const early = child && sum.wake <= E.CHILD.wakeEarly;
+    let verdict = child ? (early ? Lx.summary.wakeEarly : Lx.summary.wakeLate) : sum.short ? Lx.summary.short : Lx.summary.rested;
+    if (!child && sum.bonus) verdict += ' ' + fmt(Lx.summary.extra, { n: sum.bonus });
+    const ss = $('sumSleep'); ss.classList.toggle('bad', child ? !early : sum.short > 0);
+    const head = child ? fmt(Lx.summary.wake, { t: fmtTime(sum.wake) }) : fmt(Lx.summary.sleep, { d: sd(sum.slept) });
+    ss.innerHTML = `<span class="fe">${child ? (early ? '🌅' : '😴') : sum.short ? '🌙' : '😴'}</span><span class="ft"><b>${head}</b><br>${verdict}</span>`;
     $('sumEarned').innerHTML = `<span class="coin lg"></span>+${sum.earned}`; $('sumSpent').innerHTML = `<span class="coin lg"></span>−${sum.spent}`;
     $('sumKept').innerHTML = `<span class="coin lg"></span>${sum.kept >= 0 ? '+' : '−'}${Math.abs(sum.kept)}`; $('sumWallet').textContent = sum.wallet;
     save(); $('summary').classList.add('open');
@@ -1777,9 +2106,9 @@ if (typeof module !== 'undefined') module.exports = TSEngine;
     if (!E.goToSleep(S)) return;
     hideUndo(); save(); $('summary').classList.remove('open');
     const night = $('night'); night.classList.add('open');
-    $('nightClock').innerHTML = clockSVG('n'); setClock('n', absMin(S.day, S.bedAt == null ? E.BEDTIME : S.bedAt), false);
+    $('nightClock').innerHTML = clockSVG('n'); setClock('n', absMin(S.day, S.bedAt == null ? E.bedtimeOf(S) : S.bedAt), false);
     SFX.sleep(); speak(t('night'));
-    setTimeout(() => { const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches; ['nHour', 'nMin'].forEach(id => $(id).style.transition = `transform ${reduce ? .8 : 4.2}s cubic-bezier(.4,0,.2,1)`); setClock('n', absMin(S.day + 1, E.DAY_START), true); }, 350);
+    setTimeout(() => { const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches; ['nHour', 'nMin'].forEach(id => $(id).style.transition = `transform ${reduce ? .8 : 4.2}s cubic-bezier(.4,0,.2,1)`); setClock('n', absMin(S.day + 1, E.isChild(S) ? (S.wakeNext || E.CHILD.wakeEarly) : E.DAY_START), true); }, 350);
     setTimeout(() => {
       const msgs = E.wakeUp(S); S.msgs = msgs; save();
       renderAll(); setSky(S.time, 0.1);
@@ -1798,9 +2127,10 @@ if (typeof module !== 'undefined') module.exports = TSEngine;
     $('avatars').innerHTML = AVATARS.map(a => `<button class="avatar-btn" data-avatar="${a}" aria-pressed="${a === settings.avatar}">${a}</button>`).join('');
     const hasSave = !!store.get(SAVE_KEY);
     $('btnContinue').classList.toggle('hidden', !hasSave); $('btnPlay').classList.toggle('hidden', hasSave); $('btnNew').classList.toggle('hidden', !hasSave); $('newConfirm').classList.add('hidden');
+    $('wakeAsk').classList.remove('open');
     $('app').dataset.screen = 'start';
   }
-  // older saves (v1: hourly work + car wash; v2: happy max 6, fridge max 12; v3: fixed 21:00 bedtime; v4: sleep debt, weather, clothes)
+  // older saves (v1: hourly work + car wash; v2: happy max 6, fridge max 12; v3: fixed 21:00 bedtime; v4: sleep debt, weather, clothes; v5: no child game)
   function migrate(s) {
     if (s.v < 2) { s.lunchbox = s.lunchbox || 0; delete s.carwash; s.lastBand = s.lastBand || 'breakfast'; if (s.phase === 'day' && s.time >= E.BEDTIME) s.phase = 'summary'; }
     if (s.v < 4) { s.slept = 10 * 60; s.bedAt = s.phase === 'day' ? null : Math.min(Math.max(s.time || E.BEDTIME, E.BEDTIME), E.LATEST_BED); }
@@ -1812,17 +2142,31 @@ if (typeof module !== 'undefined') module.exports = TSEngine;
       if (s.wish && !E.ITEMS[s.wish]) s.wish = null;
       s.happy = Math.max(1, Math.min(E.HAPPY_MAX, s.happy));
     }
-    s.v = 5;
+    if (s.v < 6) { s.mode = 'adult'; s.wake = E.DAY_START; s.chores = {}; } // every saved game so far is a grown-up's day
+    s.v = 6;
     return s;
   }
-  function startGame(fresh) {
+  function startGame(fresh, wake) {
     const saved = fresh ? null : store.get(SAVE_KEY);
     if (saved && saved.v >= 1 && saved.day) { S = migrate(saved); }
-    else { S = E.newGame(settings.avatar, (Date.now() % 100000) | 0); S.msgs = [{ key: 'plan', band: E.routine(S)[0].id }]; }
+    else {
+      S = E.newGame(settings.avatar, (Date.now() % 100000) | 0, settings.mode);
+      if (wake != null && wake > S.time) { // "we woke up late": the day starts later, and the bar shows the lie-in
+        for (let i = 0; i < (wake - E.DAY_START) / E.stepOf(S); i++) S.timeline[i] = 'sleep';
+        S.wake = wake; S.time = wake;
+      }
+      S.msgs = [{ key: 'plan', band: E.routine(S)[0].id }];
+    }
     hideUndo(); applyI18n(); renderAll(); $('app').dataset.screen = 'game'; save();
     if (S.phase === 'summary') showSummary();
     else if (S.phase === 'night') { S.phase = 'summary'; showSummary(); }
     else setBubble(S.msgs);
+  }
+  // A child's first morning is the real one: ask whether we got up late today, and start the day there. From tomorrow on
+  // it is last night's bedtime that decides it, which is the whole point of the bed card.
+  function askWake() {
+    if (settings.mode !== 'child') { startGame(true); return; }
+    applyI18n(); $('wakeAsk').classList.add('open'); speak(t('wakeQ'));
   }
   function resetGame() { store.del(SAVE_KEY); S = null; closeSheet('settings'); $('resetConfirm').classList.add('hidden'); renderStart(); }
 
@@ -1837,10 +2181,13 @@ if (typeof module !== 'undefined') module.exports = TSEngine;
     if (b.dataset.close) { closeSheet(b.dataset.close); SFX.tap(); return; }
     if (b.dataset.lang) { settings.lang = b.dataset.lang; saveSettings(); applyI18n(); if (S) renderAll(); else renderStart(); return; }
     if (b.dataset.avatar) { settings.avatar = b.dataset.avatar; saveSettings(); document.querySelectorAll('.avatar-btn').forEach(x => x.setAttribute('aria-pressed', x.dataset.avatar === settings.avatar)); SFX.happy(); return; }
-    if (b.id === 'btnPlay') { SFX.tap(); startGame(true); return; }
+    if (b.dataset.mode) { settings.mode = b.dataset.mode; saveSettings(); renderStart(); SFX.happy(); return; }
+    if (b.id === 'btnPlay') { SFX.tap(); askWake(); return; }
+    if (b.id === 'btnWakeEarly') { SFX.tap(); $('wakeAsk').classList.remove('open'); startGame(true, E.CHILD.wakeEarly); return; }
+    if (b.id === 'btnWakeLate') { SFX.tap(); $('wakeAsk').classList.remove('open'); startGame(true, E.CHILD.wakeLate); return; }
     if (b.id === 'btnContinue') { SFX.tap(); startGame(false); return; }
     if (b.id === 'btnNew') { SFX.tap(); $('newConfirm').classList.remove('hidden'); b.classList.add('hidden'); $('btnContinue').classList.add('hidden'); return; }
-    if (b.id === 'btnNewYes') { SFX.tap(); startGame(true); return; }
+    if (b.id === 'btnNewYes') { SFX.tap(); askWake(); return; }
     if (b.id === 'btnNewNo') { SFX.tap(); $('newConfirm').classList.add('hidden'); $('btnNew').classList.remove('hidden'); $('btnContinue').classList.remove('hidden'); return; }
     if (b.id === 'btnUndo') { doUndo(); return; }
     if (b.dataset.act) { doAction(b.dataset.act, b); return; }
@@ -1902,7 +2249,7 @@ if (typeof module !== 'undefined') module.exports = TSEngine;
   $('clock').innerHTML = clockSVG('c');
   renderStart();
   // expose for tests
-  window.TS = { get state() { return S; }, settings, start: startGame, act: doAction, travel: (d, m) => { travelDest = d; return doTravel(m); }, goTo: openTravelTo, buy: doBuy, wish: doWish, sleep: goToSleep, wake, showSummary, undo: doUndo, engine: E, isBusy: () => busy };
+  window.TS = { get state() { return S; }, settings, start: startGame, act: doAction, travel: (d, m) => { travelDest = d; return doTravel(m); }, goTo: openTravelTo, buy: doBuy, wish: doWish, sleep: goToSleep, wake, showSummary, undo: doUndo, render: renderAll, engine: E, isBusy: () => busy };
 })();
 
 </script>
