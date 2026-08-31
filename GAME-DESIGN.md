@@ -1,7 +1,8 @@
 # TimeSpent — game design (v6)
 
 **Two games, one clock.** The start screen asks who you want to be, and **the child's day is the default**; the
-grown-up's day is the second choice. Both share the clock, the day bar, the plan strip, the meters, the spoken cards
+grown-up's day is the second choice. Each keeps its own save, so the picker chooses which game "Keep playing"
+resumes — a grown-up's day cannot be continued as a child's, and neither overwrites the other. Both share the clock, the day bar, the plan strip, the meters, the spoken cards
 and the shops — only the day inside them differs. The child's day is written up in its own section below; everything
 else on this page is the grown-up's day.
 

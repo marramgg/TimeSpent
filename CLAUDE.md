@@ -54,7 +54,8 @@ Never commit tokens or credentials. The only credential is Marcos's GitHub token
   screen at a time; the action grid gets the leftover screen space, never the scenery. Check a change at 390×664
   before shipping it: no card should sit entirely below the fold.
 - Grids with wrapping tiles need `grid-auto-rows: max-content`; action tiles are `div[role=button]`.
-- The shop sheet closes after each purchase. Save key: `timespent.save.v1`.
+- The shop sheet closes after each purchase. One save per game: `timespent.save.v1` (grown-up) and
+  `timespent.save.child.v1`, so the start screen's picker chooses which game "Keep playing" resumes.
 - Balance knobs are at the top of `engine.js` (`WORK_PAY`, `ITEMS`, `STALL_UNLOCK`, `PLACES[*].unlockDay`, opening
   hours). One new thing opens per day — keep day 1 to home + bakery + walking (child: home + school + walking).
 - The child's game lives behind `isChild(state)`: `CHILD` (times), `CHORE` (the routine cards), `childRoutine()` and
