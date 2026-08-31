@@ -22,12 +22,13 @@ jobs:
           cmp dist/index.html index.html || { echo "::error::index.html is stale - run: python3 build.py && cp dist/index.html index.html"; exit 1; }
       - name: Simulation (node test/sim.js)
         run: node test/sim.js
-      - name: Playwright playthrough (node test/ui-play.js)
+      - name: Playwright playthroughs (grown-up and child)
         run: |
           npm init -y >/dev/null
           npm i --no-audit --no-fund playwright@1
           npx playwright install --with-deps chromium
           node test/ui-play.js
+          node test/ui-child.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:

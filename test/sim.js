@@ -68,9 +68,26 @@ function sensiblePolicy(s, enabled) {
   return { type: 'act', id: 'rest' };
 }
 
-function runDays(policy, days, seed, log) {
+// A child who does the routine: eat, teeth, dressed, leave in time for the bell, then whatever the evening asks for.
+function childPolicy(s, enabled) {
+  const has = id => enabled.find(a => a.id === id);
+  const act = id => ({ type: 'act', id }), go = d => ({ type: 'travel', dest: d, mode: 'walk' });
+  if (s.loc === 'home' && s.time < E.CHILD.lunchAt) {
+    if (has('breakfast')) return act('breakfast');
+    if (has('teethAM')) return act('teethAM');
+    if (has('dress')) return act('dress');
+    if (!E.isWeekend(s.day)) return s.time + E.CHILD.walk >= E.CHILD.schoolIn - 15 ? go('school') : act('playHome');
+  }
+  if (s.loc === 'school') return has('school') ? act('school') : go('home');
+  if (s.loc !== 'home') return go('home');
+  for (const id of ['wash', 'tidy', 'lunch', 'dinner', 'bath', 'teethPM']) if (has(id)) return act(id);
+  if (has('bed') && s.time >= E.CHILD.goodBed) return act('bed');
+  return act('playHome');
+}
+
+function runDays(policy, days, seed, log, mode) {
   let x = seed; const rnd = () => { x = (x * 1103515245 + 12345) & 0x7fffffff; return x / 0x7fffffff; };
-  const s = E.newGame('🐻', seed);
+  const s = E.newGame('🐻', seed, mode);
   const report = [];
   for (let d = 0; d < days; d++) {
     let guard = 0;
@@ -80,7 +97,7 @@ function runDays(policy, days, seed, log) {
     report.push({ day: s.day, wd: E.weekday(s.day), earned: sum.earned, spent: sum.spent, wallet: s.coins, toys: s.toys.join(','), wardrobe: Object.keys(s.wardrobe).join(','), fridge: s.fridge });
     assert(E.goToSleep(s), 'goToSleep failed', s);
     const msgs = E.wakeUp(s); assert(msgs && msgs.length, 'wakeUp failed', s);
-    assert(s.time === E.DAY_START && s.loc === 'home' && s.phase === 'day', 'bad morning state', s);
+    assert(s.time === (E.isChild(s) ? s.wake : E.DAY_START) && s.loc === 'home' && s.phase === 'day', 'bad morning state', s);
   }
   if (log) report.forEach(r => console.log(JSON.stringify(r)));
   return s;
@@ -251,6 +268,80 @@ console.log('--- work pays the same whenever you turn up');
   assert(w.earn === 2 && w.minutes === 120, 'two hours late: 2 hours, 2 coins, nothing extra taken', w);
 }
 console.log('ok');
+console.log('--- child mode: random policy, 30 seeds x 14 days');
+for (let seed = 1; seed <= 30; seed++) runDays(randomPolicy, 14, seed, false, 'child');
+console.log('ok');
+
+console.log('--- child mode: doing the routine keeps a child well and happy');
+{
+  const c = runDays(childPolicy, 14, 5, false, 'child');
+  assert(c.tummy >= 3 && c.happy >= 3, 'a child who keeps the routine should be well', c);
+  assert(c.coins >= 14, 'pocket money adds up', c);
+}
+
+console.log('--- child mode: day 1 is home and school, and five cards');
+{
+  const d1 = E.newGame('\u{1F43B}', 3, 'child');
+  assert(E.destinations(d1).map(p => p.id).join(',') === 'home,school', 'day 1 is home and school', E.destinations(d1));
+  assert(E.travelOptions(d1).map(o => o.mode).join(',') === 'walk', 'a child walks', E.travelOptions(d1));
+  const ids = E.actions(d1).map(a => a.id);
+  assert(ids.join(',') === 'breakfast,dress,teethAM,playHome', 'the morning has four cards', ids);
+  const ev = E.newGame('\u{1F43B}', 3, 'child'); ev.time = E.CHILD.bedFrom;
+  assert(E.actions(ev).some(a => a.id === 'bed'), 'and the bed card comes out in the evening', E.actions(ev).map(a => a.id));
+  assert(!E.foodTrapped(d1), 'a child is never trapped without food', d1);
+}
+
+console.log('--- child mode: last night decides this morning');
+{
+  const onTime = E.newGame('\u{1F43B}', 3, 'child'); onTime.time = E.CHILD.goodBed;
+  E.perform(onTime, 'bed'); E.goToSleep(onTime); E.wakeUp(onTime);
+  assert(onTime.wake === E.CHILD.wakeEarly, 'bed by 20:30 wakes at 7:00', onTime.wake);
+  const late = E.newGame('\u{1F43B}', 3, 'child'); late.time = E.CHILD.goodBed + 15;
+  E.perform(late, 'bed'); E.goToSleep(late); E.wakeUp(late);
+  assert(late.wake === E.CHILD.wakeLate, 'a later bed wakes at 7:30', late.wake);
+  // 20:30 to 7:00 and 21:00 to 7:30 are the same ten and a half hours: what a late bed costs is the morning, not the sleep
+  const a = E.nightMath(onTime, E.CHILD.goodBed).slept, b = E.nightMath(late, 21 * 60).slept;
+  assert(a === b, 'same night, later morning', { a, b });
+}
+
+console.log('--- child mode: waking early buys play time, waking late does not');
+{
+  const play = (wake) => {
+    const s = E.newGame('\u{1F43B}', 3, 'child'); s.wake = wake; s.time = wake;
+    let n = 0;
+    for (const id of ['breakfast', 'dress', 'teethAM']) assert(E.perform(s, id).ok, 'routine card should work', id);
+    while (s.time + E.CHILD.walk < E.CHILD.schoolIn) { assert(E.perform(s, 'playHome').ok, 'play should work', s); n++; } // stop while there is still time to walk
+    return n;
+  };
+  const early = play(E.CHILD.wakeEarly), late = play(E.CHILD.wakeLate);
+  assert(early === 2 && late === 0, 'up at 7:00 buys two plays, up at 7:30 buys none', { early, late });
+}
+
+console.log('--- child mode: the routine has consequences, and they are said out loud');
+{
+  const s = E.newGame('\u{1F43B}', 3, 'child');
+  assert(!E.travel(s, 'school', 'walk').ok, 'cannot leave undressed', s);
+  assert(E.travel(s, 'school', 'walk').msgs[0].key === 'notDressed', 'and the game says why', s);
+  assert(E.perform(s, 'dress').ok, 'get dressed', s);
+  const health = s.tummy, out = E.travel(s, 'school', 'walk');
+  assert(out.ok && s.loc === 'school', 'now we can go', s);
+  assert(out.msgs.some(m => m.key === 'noBreakfast') && out.msgs.some(m => m.key === 'noTeeth'), 'skipping is named', out.msgs);
+  assert(s.tummy === health - 3, 'no breakfast and no teeth cost health', { health, now: s.tummy });
+
+  const late = E.newGame('\u{1F43B}', 3, 'child'); late.time = E.CHILD.schoolIn; late.chores = { dress: true, breakfast: true, teethAM: true };
+  assert(E.travel(late, 'school', 'walk').msgs.some(m => m.key === 'lateSchool'), 'leaving at the bell is late', late);
+
+  const hands = E.newGame('\u{1F43B}', 3, 'child'); hands.time = E.CHILD.dinnerFrom;
+  assert(E.perform(hands, 'dinner').msgs.some(m => m.key === 'dirtyHands'), 'dinner with dirty hands is named', hands);
+}
+
+console.log('--- child mode: a bath every second day');
+{
+  const evening = (day) => { const s = E.newGame('\u{1F43B}', 3, 'child'); s.day = day; s.time = E.CHILD.dinnerFrom; E.perform(s, 'dinner'); return E.actions(s).map(a => a.id); };
+  assert(evening(2).includes('bath'), 'day 2 has a bath', evening(2));
+  assert(!evening(3).includes('bath'), 'day 3 has none', evening(3));
+}
+
 console.log('--- strings: EN and PT complete, and nothing the game says is missing');
 { // everything is read aloud in two languages, so a missing string is a silent button
   const fs = require('fs'), path = require('path');
@@ -265,14 +356,22 @@ console.log('--- strings: EN and PT complete, and nothing the game says is missi
   const noText = emitted.filter(k => !I18N.en.bubble[k] && !I18N.en.why[k]);
   assert(noText.length === 0, 'engine message keys with no string', noText);
 
-  const bands = new Set(), ids = new Set();
-  for (let d = 1; d <= 8; d++) {
-    const r = E.newGame('\u{1F43B}', 1); r.day = d; E.routine(r).forEach(b => bands.add(b.id));
-    for (const loc of ['home', 'bakery', 'shops', 'park']) {
-      const a = E.newGame('\u{1F43B}', 1); a.day = d; a.loc = loc; a.toys = ['ball']; a.lunchbox = 1; a.coins = 30;
-      E.actions(a).forEach(x => ids.add(x.id));
+  const bands = new Set(), ids = new Set(), places = new Set();
+  for (const mode of ['adult', 'child']) {
+    const locs = mode === 'child' ? ['home', 'school', 'shops', 'park'] : ['home', 'bakery', 'shops', 'park'];
+    for (let d = 1; d <= 8; d++) {
+      const r = E.newGame('\u{1F43B}', 1, mode); r.day = d; E.routine(r).forEach(b => bands.add(b.id));
+      E.destinations(r).forEach(p => places.add(p.id));
+      for (const loc of locs) for (const at of [8 * 60, 13 * 60, 19 * 60, 20 * 60]) {
+        const a = E.newGame('\u{1F43B}', 1, mode); a.day = d; a.loc = loc; a.time = at; a.toys = ['ball']; a.lunchbox = 1; a.coins = 30;
+        E.actions(a).forEach(x => ids.add(x.id));
+      }
     }
   }
+  const badPlaces = [...places].filter(p => !I18N.en.places[p] || !I18N.pt.places[p] || !I18N.en.placeWords[p] || !I18N.pt.placeWords[p] || !I18N.en.bubble.arrived[p] || !I18N.pt.bubble.arrived[p]);
+  assert(badPlaces.length === 0, 'places with no text', badPlaces);
+  const badChores = Object.values(E.CHORE).filter(c => !I18N.en.bubble[c.msg] || !I18N.pt.bubble[c.msg]);
+  assert(badChores.length === 0, 'routine cards with no spoken line', badChores);
   const badBands = [...bands].filter(b => !I18N.en.plan[b] || !I18N.pt.plan[b] || !I18N.en.bubble.plan[b] || !I18N.pt.bubble.plan[b]);
   assert(badBands.length === 0, 'plan bands with no text', badBands);
   const badActs = [...ids].filter(i => !I18N.en.act[i] || !I18N.pt.act[i]);

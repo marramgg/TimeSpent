@@ -10,6 +10,7 @@ const file = 'file://' + path.join(__dirname, '..', 'dist', 'index.html');
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto(file); await page.waitForTimeout(400);
   await page.evaluate(() => { TS.settings.voice = false; });
+  await page.click('[data-mode="adult"]'); await page.waitForTimeout(150); // this playthrough is the grown-up's day
   await page.click('#btnPlay'); await page.waitForTimeout(400);
   const idle = async () => { for (let i = 0; i < 100; i++) { const b = await page.evaluate(() => TS.isBusy()); if (!b) return; await page.waitForTimeout(80); } throw new Error('stuck busy'); };
   const st = () => page.evaluate(() => { const s = TS.state; return { day: s.day, time: s.time, loc: s.loc, coins: s.coins, tummy: s.tummy, happy: s.happy, fridge: s.fridge, phase: s.phase, toys: s.toys, wish: s.wish, wardrobe: s.wardrobe }; });

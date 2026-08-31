@@ -1,6 +1,8 @@
 # TimeSpent — instructions for Claude (every chat, every session)
 
 TimeSpent is a single-file web game (`index.html`) that teaches Marcos's 5-year-old son time and money.
+It holds **two games on one clock**: the **child's day** (the default — routine, school, play, bedtime, quarter hours)
+and the **grown-up's day** (work, shopping, coins, half hours). The start screen picks between them.
 Rules live in `GAME-DESIGN.md` (keep it current). Live game: https://marramgg.github.io/TimeSpent/
 (GitHub Pages serves the `main` branch as-is, about a minute after every merge).
 
@@ -12,8 +14,9 @@ Rules live in `GAME-DESIGN.md` (keep it current). Live game: https://marramgg.gi
 2. Edit only `src/*` (engine.js rules, i18n.js EN + PT-PT strings, ui.js, styles.css, markup.html) and the docs.
 3. Build: `python3 build.py && cp dist/index.html index.html` — `index.html` is the built app and must match
    the sources; CI rejects a stale one.
-4. Test: `node test/sim.js` (no deps, must pass). For UI changes also run the real playthrough:
-   `npm i playwright && npx playwright install --with-deps chromium && node test/ui-play.js`.
+4. Test: `node test/sim.js` (no deps, must pass — it covers both games). For UI changes also run the real
+   playthroughs: `npm i playwright && npx playwright install --with-deps chromium`, then `node test/ui-play.js`
+   (the grown-up's day) and `node test/ui-child.js` (the child's day).
 5. Commit, push the branch, open the PR: `gh pr create --fill`. Then `gh pr merge --squash --auto` —
    it merges by itself once CI is green (`gh pr checks --watch` shows progress). Pages publishes main.
 6. Rule changes: update `GAME-DESIGN.md` and keep `routine()` in engine.js in sync (it drives the plan strip
@@ -53,7 +56,10 @@ Never commit tokens or credentials. The only credential is Marcos's GitHub token
 - Grids with wrapping tiles need `grid-auto-rows: max-content`; action tiles are `div[role=button]`.
 - The shop sheet closes after each purchase. Save key: `timespent.save.v1`.
 - Balance knobs are at the top of `engine.js` (`WORK_PAY`, `ITEMS`, `STALL_UNLOCK`, `PLACES[*].unlockDay`, opening
-  hours). One new thing opens per day — keep day 1 to home + bakery + walking.
+  hours). One new thing opens per day — keep day 1 to home + bakery + walking (child: home + school + walking).
+- The child's game lives behind `isChild(state)`: `CHILD` (times), `CHORE` (the routine cards), `childRoutine()` and
+  `childActions()`. It moves in 15-minute steps, so anything that reads `E.STEP`/`E.SLOTS` must ask `E.stepOf(S)` /
+  `E.slotsOf(S)` instead. Its two meters are ❤️ Health (which reuses `state.tummy`) and 😊 Happy; no fridge, no wages.
 - Everything is read aloud and bilingual: every new string goes in `i18n.js` in both EN and PT-PT, and bubble lines
   stay under about ten words.
 - Sleep debt, weather and the late-for-work fine were deliberately removed (see the end of `GAME-DESIGN.md`).

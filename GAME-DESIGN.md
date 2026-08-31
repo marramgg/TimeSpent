@@ -1,4 +1,9 @@
-# TimeSpent — game design (v5)
+# TimeSpent — game design (v6)
+
+**Two games, one clock.** The start screen asks who you want to be, and **the child's day is the default**; the
+grown-up's day is the second choice. Both share the clock, the day bar, the plan strip, the meters, the spoken cards
+and the shops — only the day inside them differs. The child's day is written up in its own section below; everything
+else on this page is the grown-up's day.
 
 A day is one turn. Wake at 7:00, bedtime at 21:00 — but you may stay up at home until midnight. Every action costs
 time (clock, sun and the 24 h bar move) and many cost or earn coins.
@@ -43,6 +48,7 @@ When there is only one way to travel, tapping a place just goes there — no "ho
 
 | Place | Open | Actions |
 |---|---|---|
+| School (child) | 8:00–17:30 Mon–Fri | School until half past five (one card) |
 | Home | always | Cook & eat (30 m, 1 fridge meal, tummy +4, happy +1), Pack a lunchbox (30 m, 1 meal, weekdays from day 2), Play with a toy (1 h, happy +1), Go to bed (any time — the card shows the night's length and the happiness bonus) |
 | Bakery | 8–18 Mon–Fri | Work until the end of the shift (1 coin/h), Lunch at the café (30 m, 2 coins, tummy +4, happy +1) |
 | Shops | 9–18 daily | Food basket (6 meals / 5 coins, fridge holds 20), Restaurant (30 m, 2 coins, tummy +4, happy +1), Toys: party hat 2, ball 3, teddy 5, kite 8, bike 12, train 20 + "I wish" |
@@ -74,6 +80,59 @@ Let's sleep — tomorrow I can work again."* — and the bed card glows. It neve
 ## Night
 "Go to bed" or midnight → day summary (24 h bar vs plan with the real night, hours per activity, earned/spent/kept,
 tonight's sleep) → sleep animation (clock spins from bedtime to 7:00) → new morning.
+
+## The child's day (the default game)
+
+A five-year-old does not choose whether to go to school, and does not choose when dinner is. What a child does choose
+is **the order and the speed of the routine**, and what to do with what is left. So every bit of the routine is a card
+the child presses — and every quarter of an hour it takes is a quarter of an hour not spent playing.
+
+The clock moves in **quarter hours** here (the grown-up's day still moves in half hours), because that is the size of
+the choices: breakfast, getting dressed, brushing teeth are a quarter each.
+
+### The loop that matters
+**Bed by 20:30 → up at 7:00 → two quarter-hours to play before school. Bed later → up at 7:30 → none.**
+The night is the same length either way (20:30–7:00 and 21:00–7:30 are both ten and a half hours): a late bedtime does
+not cost sleep, it costs the morning. So the bed card shows **the wake-up time it buys**, not the hours.
+
+Day 1 asks the real question out loud — *"Did we wake up late today?"* — and starts the day at 7:00 or 7:30 depending
+on the answer. From day 2 on, last night's bed card decides it, and the morning says why.
+
+### Weekday
+| Time | What | Who decides |
+|---|---|---|
+| 7:00 or 7:30 | Wake up | last night's bedtime |
+| → 8:15 | 🥣 breakfast · 👕 get dressed · 🪥 teeth (a quarter of an hour each), then play with what is left | the child |
+| 15 min | Walk to school. Leaving before 8:15 means arriving before the bell, with time to play on the way (😊 +1) | falls out of the morning |
+| 8:30–17:30 | School — **one card**. The plan strip still shows the shape of it: forest, lunch at 12, activities at 13 | nobody |
+| 17:45 | Home. 🧼 wash hands · 🧹 tidy up, then free time | the child |
+| 18:30 | 🍽️ dinner | nobody |
+| every 2nd day | 🛁 bath (it counts as playing) | nobody |
+| evening | 🪥 teeth, then play until bed | the child |
+| 20:30 or 21:00 | 🛏️ bed | **the child** |
+
+Weekends: no school — the same routine around free play, the park and lunch at home.
+
+### Meters: ❤️ Health and 😊 Happy (both 0–6)
+The fridge and the tummy belong to the grown-up's day; a child is fed and shopped for. Health is the *routine* meter
+and Happy is the *play* meter. Each bit of looking after yourself is +1 health; playing is +1 happy a quarter.
+Neither starts full in the morning (they carry over between 2 and 4), so there is always room for the day to move them.
+
+**Skipping is allowed, and it says so at the moment it bites** — never before, and never as a telling-off:
+| What was skipped | What it costs | What the game says |
+|---|---|---|
+| Breakfast, at the school gate | ❤️ −2 😊 −1 | "I had no time for breakfast. My tummy hurts." |
+| Teeth, at the school gate | ❤️ −1 | "No time to brush my teeth this morning." |
+| Arriving after the bell | 😊 −1 | "We are late for school! It is {t} already." |
+| Washing hands, at dinner | ❤️ −1 | "Dinner with dirty hands. Wash them next time!" |
+| Teeth, at bedtime | ❤️ −1 😊 −1 | "Oh no, I forgot to brush my teeth." |
+| Getting dressed | you cannot leave the house | "Get dressed first!" |
+
+There is no dead end: a child is never trapped without food, and away from home there is always a card to press.
+
+### Money in the child's day
+No wages — **one coin of pocket money each morning**. The wish-and-save loop is the same as the grown-up's: the park
+opens on day 2, the shops on day 3, the toy stall and wishes on day 4, and a teddy is five mornings of saving.
 
 ## Look
 Picture-book wooden-toy world: sky dome with a travelling sun, chunky outlined cards, coins and apples as countable

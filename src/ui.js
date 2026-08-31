@@ -16,7 +16,7 @@
   };
   const defaultLang = () => (navigator.language || 'en').toLowerCase().startsWith('pt') ? 'pt' : 'en';
   // 12 h by default: the big clock face only has 1–12 on it, so "13:00" beside it would be a second system to learn.
-  const settings = Object.assign({ lang: defaultLang(), clock24: false, sound: true, voice: true, avatar: '🐻' }, store.get(SET_KEY) || {});
+  const settings = Object.assign({ lang: defaultLang(), clock24: false, sound: true, voice: true, avatar: '🐻', mode: 'child' }, store.get(SET_KEY) || {});
   const saveSettings = () => store.set(SET_KEY, settings);
 
   let S = null;            // game state (engine-owned shape)
@@ -93,9 +93,10 @@
     const disc = (h) => h
       ? `<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="#fff" stroke="#33241A" stroke-width="2"/><path d="M10,10 L10,2 A8,8 0 0 1 10,18 Z" fill="#F6C445"/><circle cx="10" cy="10" r="1.5" fill="#33241A"/></svg>`
       : `<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="#F6C445" stroke="#33241A" stroke-width="2"/><circle cx="10" cy="10" r="1.5" fill="#33241A"/><path d="M10,10 L10,3.5" stroke="#33241A" stroke-width="2" stroke-linecap="round"/></svg>`;
-    const full = Math.floor(min / 60), half = (min % 60) >= 30;
+    const quarter = `<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="#fff" stroke="#33241A" stroke-width="2"/><path d="M10,10 L10,2 A8,8 0 0 1 18,10 Z" fill="#F6C445"/><circle cx="10" cy="10" r="1.5" fill="#33241A"/></svg>`;
+    const full = Math.floor(min / 60), rest = min % 60;
     for (let i = 0; i < Math.min(full, 12); i++) html += disc(false);
-    if (half) html += disc(true);
+    if (rest >= 30) html += disc(true); else if (rest >= 15) html += quarter;
     return html + '</span>';
   }
   const fmtH = (min) => `${Math.floor(min / 60)}${min % 60 >= 30 ? '½' : ''} h`;
@@ -110,14 +111,16 @@
   // ---------- what the voice says about a card, before it does anything ----------
   function actLabel(a) {
     const Lx = L();
-    return a.id === 'work' ? (a.until && a.enabled ? fmt(Lx.act.work, { t: fmtTime(a.until) }) : Lx.act.workClosed) : Lx.act[a.id];
+    if (a.id === 'work') return a.until && a.enabled ? fmt(Lx.act.work, { t: fmtTime(a.until) }) : Lx.act.workClosed;
+    if (a.id === 'school') return a.until && a.enabled ? fmt(Lx.act.school, { t: fmtTime(a.until) }) : Lx.act.schoolClosed;
+    return Lx.act[a.id];
   }
   function sayAction(a) {
     const Lx = L(), parts = [];
-    const label = a.id === 'work' && a.until && a.enabled ? fmt(Lx.act.work, { t: sayTime(a.until) }) : actLabel(a);
+    const label = (a.id === 'work' || a.id === 'school') && a.until && a.enabled ? fmt(Lx.act[a.id], { t: sayTime(a.until) }) : actLabel(a);
     parts.push(label + '.');
     if (!a.enabled) { if (a.why) parts.push(fmt(Lx.say.locked, { why: whyShort(a.why) })); return parts.join(' '); }
-    if (a.id === 'bed') parts.push(fmt(Lx.say.night, { d: Lx.time.sayDur(a.sleep) }));
+    if (a.id === 'bed') parts.push(a.wake != null ? fmt(Lx.say.wakeAt, { t: sayTime(a.wake) }) : fmt(Lx.say.night, { d: Lx.time.sayDur(a.sleep) }));
     if (a.minutes) parts.push(fmt(Lx.say.dur, { d: Lx.time.sayDur(a.minutes) }));
     const net = (a.earn || 0) - (a.cost || 0);
     if (net > 0) parts.push(fmt(Lx.say.earns, { n: Lx.coinsN(net) }));
@@ -159,9 +162,10 @@
   // ---------- sky ----------
   function setSky(time, dur) {
     const sky = $('sky'); const clamp = (v) => Math.max(0, Math.min(1, v));
-    const dayOp = clamp(Math.min((time - 420) / 60, (E.BEDTIME - time) / 120));
-    const nightOp = time >= E.BEDTIME - 30 ? clamp((time - (E.BEDTIME - 30)) / 60) : clamp((420 - time) / 60);
-    const p = clamp((time - 420) / (E.BEDTIME - 420)), ang = Math.PI - p * Math.PI;
+    const bed = S ? E.bedtimeOf(S) : E.BEDTIME; // dusk falls at the mode's bedtime
+    const dayOp = clamp(Math.min((time - 420) / 60, (bed - time) / 120));
+    const nightOp = time >= bed - 30 ? clamp((time - (bed - 30)) / 60) : clamp((420 - time) / 60);
+    const p = clamp((time - 420) / (bed - 420)), ang = Math.PI - p * Math.PI;
     const sx = 50 + 42 * Math.cos(ang), sy = 84 - 72 * Math.sin(ang);
     const d = (dur || 1) + 's';
     sky.querySelector('.day').style.opacity = dayOp; sky.querySelector('.dusk').style.opacity = 1 - dayOp;
@@ -178,29 +182,35 @@
   }
 
   // ---------- day bar: 24 hours from 7:00, the plan for the day (+ a preview of the next action) ----------
-  // Cells after the usual 21:00 bedtime are "late" (playable until midnight); from the real bedtime (bedAt, else midnight) on, the night is dark.
-  const BED_HOUR = (E.BEDTIME - E.DAY_START) / 60, LATEST_HOUR = (E.LATEST_BED - E.DAY_START) / 60; // 14, 17
+  // Cells after the mode's bedtime are "late" (you may still stay up); from the real bedtime (bedAt) on, the night is dark.
+  // Each hour is split into as many pieces as the mode's step: halves for a grown-up, quarters for a child, whose
+  // routine happens in fifteen-minute bites.
   function renderDayBar(container, timeline, time, bands, preview, bedAt) {
+    const step = S ? E.stepOf(S) : E.STEP, per = 60 / step, slots = S ? E.slotsOf(S) : E.SLOTS;
+    const bedHour = ((S ? E.bedtimeOf(S) : E.BEDTIME) - E.DAY_START) / 60, latestHour = ((S ? E.latestOf(S) : E.LATEST_BED) - E.DAY_START) / 60;
     const col = (c) => c ? E.CAT_COLORS[c] : 'transparent';
     const pv = {}; // slot -> cat for the preview
-    if (preview && time != null) for (let i = 0; i < preview.minutes / E.STEP; i++) { const slot = (time - E.DAY_START) / E.STEP + i; if (slot >= 0 && slot < E.SLOTS && !timeline[slot]) pv[slot] = preview.cat; }
-    const nightSlot = bedAt != null ? (bedAt - E.DAY_START) / E.STEP : E.SLOTS; // first half-hour that is asleep
+    if (preview && time != null) for (let i = 0; i < preview.minutes / step; i++) { const slot = (time - E.DAY_START) / step + i; if (slot >= 0 && slot < slots && !timeline[slot]) pv[slot] = preview.cat; }
+    const nightSlot = bedAt != null ? (bedAt - E.DAY_START) / step : slots; // first piece of the day that is asleep
     const NIGHT = 'var(--night-2)';
-    const half = (slot) => slot >= nightSlot ? NIGHT : timeline[slot] ? col(timeline[slot]) : 'transparent';
+    const piece = (slot) => slot >= nightSlot ? NIGHT : timeline[slot] ? col(timeline[slot]) : 'transparent';
     let cells = '';
     for (let i = 0; i < 24; i++) {
-      const s0 = i * 2;
-      if (s0 >= nightSlot || i >= LATEST_HOUR) { cells += '<i class="c night"></i>'; continue; }
-      const pa = pv[s0] != null && !timeline[s0], pb = pv[s0 + 1] != null && !timeline[s0 + 1];
-      const bg = (x, isPv) => isPv ? `repeating-linear-gradient(135deg, ${E.CAT_COLORS[pv[x]]} 0 3px, rgba(255,255,255,.55) 3px 6px)` : half(x);
-      cells += `<i class="c${pa || pb ? ' pv' : ''}${i >= BED_HOUR ? ' late' : ''}"><b style="background:${bg(s0, pa)}"></b><b style="background:${bg(s0 + 1, pb)}"></b></i>`;
+      const s0 = i * per;
+      if (s0 >= nightSlot || i >= latestHour) { cells += '<i class="c night"></i>'; continue; }
+      let inner = '', anyPv = false;
+      for (let k = 0; k < per; k++) {
+        const x = s0 + k, isPv = pv[x] != null && !timeline[x]; if (isPv) anyPv = true;
+        inner += `<b style="background:${isPv ? `repeating-linear-gradient(135deg, ${E.CAT_COLORS[pv[x]]} 0 3px, rgba(255,255,255,.55) 3px 6px)` : piece(x)}"></b>`;
+      }
+      cells += `<i class="c${anyPv ? ' pv' : ''}${i >= bedHour ? ' late' : ''}">${inner}</i>`;
     }
     // The whole strip is one target that reads out what is happening now — ten separate 7 px bands were untappable.
     const plan = (bands || []).map(b => `<span class="band" style="left:${((b.from - 7) / 24 * 100).toFixed(2)}%;width:${((b.to - b.from) / 24 * 100).toFixed(2)}%;background:${E.CAT_COLORS[b.cat]}"><em>${b.emoji}</em></span>`).join('');
 
     // The bar spans a whole day, so 12 h numbers would repeat (7, 9, 11, 1, 3, 5, 7, 9 …) and mean nothing.
     // Three pictures say the same thing to a child who cannot read a clock yet: get up, midday, bedtime.
-    const MARKS = [[0, '🌅'], [5, '☀️'], [(E.BEDTIME - E.DAY_START) / 60, '🌙']];
+    const MARKS = [[0, '🌅'], [5, '☀️'], [((S ? E.bedtimeOf(S) : E.BEDTIME) - E.DAY_START) / 60, '🌙']];
     const labels = MARKS.map(([i, ico]) => `<span style="left:${(i / 24 * 100).toFixed(2)}%${i ? '' : ';transform:none'}">${ico}</span>`).join('');
     const pct = (tt) => Math.min(100, Math.max(0, (tt - E.DAY_START) / 1440 * 100)).toFixed(2);
     let markers = '';
@@ -229,6 +239,8 @@
   function applyI18n() {
     document.querySelectorAll('[data-i18n]').forEach(el => { const v = t(el.dataset.i18n); if (typeof v === 'string') el.textContent = v; });
     $('btnPlay').textContent = t('play'); $('btnContinue').textContent = t('cont'); $('btnNew').textContent = t('newGame');
+    $('btnWakeEarly').textContent = t('wakeQEarly'); $('btnWakeLate').textContent = t('wakeQLate');
+    document.querySelectorAll('#modePick .mode-btn').forEach(b => b.setAttribute('aria-pressed', b.dataset.mode === settings.mode));
     $('btnSleep').textContent = '😴 ' + t('act.sleep'); $('btnWake').textContent = t('act.wake');
     $('travelTitle').textContent = t('travel.title'); $('travelHow').textContent = t('travel.how'); $('shopTitle').textContent = t('act.shop');
     $('nightText').textContent = t('night'); $('btnUndo').textContent = '↩ ' + t('undo');
@@ -237,6 +249,7 @@
     document.querySelectorAll('#setSound button').forEach(b => b.setAttribute('aria-pressed', (b.dataset.v === '1') === settings.sound));
     document.querySelectorAll('#setVoice button').forEach(b => b.setAttribute('aria-pressed', (b.dataset.v === '1') === settings.voice));
     $('speakBtn').classList.toggle('on', settings.voice);
+    $('settings').querySelector('.about').textContent = t(E.isChild(S || { mode: settings.mode }) ? 'settings.aboutChild' : 'settings.about');
     document.documentElement.lang = settings.lang;
   }
 
@@ -260,7 +273,10 @@
   }
   function pvd(el, delta) { const b = el.querySelector('.pvd'); if (!b) return; if (!delta) { b.classList.add('hidden'); b.textContent = ''; return; } b.classList.remove('hidden'); b.textContent = (delta > 0 ? '+' : '−') + Math.abs(delta); b.classList.toggle('down', delta < 0); }
   function renderMeters(pv) {
-    const dT = pv ? (pv.tummy || 0) - (pv.minutes || 0) * (E.HUNGER_PER_STEP / E.STEP) : 0;
+    const child = E.isChild(S);
+    $('tummyIco').textContent = child ? '❤️' : '🍎'; $('tummyLab').textContent = t(child ? 'health' : 'tummy');
+    $('game').querySelector('.meters').classList.toggle('nofridge', child);
+    const dT = pv ? (pv.tummy || 0) - (pv.minutes || 0) * (E.hungerOf(S) / E.stepOf(S)) : 0;
     const dH = pv ? (pv.happy || 0) : 0, dF = pv ? (pv.fridge || 0) : 0;
     const cT = Math.ceil(S.tummy), aT = Math.ceil(clampv(S.tummy + dT, 0, E.TUMMY_MAX));
     const cH = Math.ceil(S.happy), aH = Math.ceil(clampv(S.happy + dH, 0, E.HAPPY_MAX));
@@ -331,10 +347,14 @@
       const label = actLabel(a);
       let chips = '';
       if (a.minutes) chips += timeDiscs(a.minutes);
-      if (a.id === 'bed') chips += `<span class="cchip ${a.sleepShort ? 'spend' : 'free'}">😴 ${fmtH(a.sleep)}</span>`; // how long the night would be, then the happiness bonus
+      // For a grown-up the bed card shows how long the night would be; for a child it shows the morning that night buys,
+      // because the night is the same length either way — what a late bed costs is play time tomorrow.
+      if (a.id === 'bed') chips += a.wake != null
+        ? `<span class="cchip ${a.sleepShort ? 'spend' : 'free'}">${a.sleepShort ? '😴' : '🌅'} ${fmtTime(a.wake)}</span>`
+        : `<span class="cchip ${a.sleepShort ? 'spend' : 'free'}">😴 ${fmtH(a.sleep)}</span>`;
       const coin = (a.earn || 0) - (a.cost || 0);
       if (coin) chips += effChip(COIN_ICO, coin);
-      const other = [['🍎', a.tummy], ['😊', a.happy], ['🧺', a.fridge]].filter(c => Math.abs(c[1]) >= 1).sort((x, y) => Math.abs(y[1]) - Math.abs(x[1]))[0];
+      const other = [[E.isChild(S) ? '❤️' : '🍎', a.tummy], ['😊', a.happy], ['🧺', a.fridge]].filter(c => Math.abs(c[1]) >= 1).sort((x, y) => Math.abs(y[1]) - Math.abs(x[1]))[0];
       if (other) chips += effChip(other[0], other[1]);
       if (a.id === 'shop') chips = `<span class="mchip">${['food', 'toys'].filter(st => E.stallOpen(S, st)).map(st => ({ food: '🥕', toys: '🧸' })[st]).join(' ')}</span>` + chips;
       const why = !a.enabled && a.why ? `<div class="why">${whyShort(a.why)}</div>` : '';
@@ -410,13 +430,13 @@
   // ---------- performing actions ----------
   function animateTime(fromAbs, toAbs, steps) {
     return new Promise(res => {
-      const n = Math.max(1, Math.round((toAbs - fromAbs) / E.STEP)); const dur = Math.min(0.4 * n, 2.0);
+      const step = E.stepOf(S); const n = Math.max(1, Math.round((toAbs - fromAbs) / step)); const dur = Math.min(0.4 * n, 2.0);
       const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
       ['cHour', 'cMin'].forEach(id => { $(id).style.transition = `transform ${reduce ? .2 : dur}s cubic-bezier(.45,0,.35,1)`; });
       setClock('c', toAbs, true); shownTime = toAbs;
       const time = toAbs - (S.day - 1) * 1440; setSky(time, dur);
-      for (let i = 1; i <= n; i++) setTimeout(() => { SFX.tick(); const tt = time - (n - i) * E.STEP; $('digital').textContent = fmtTime(tt); const inf = E.timeInfo(tt); $('partTxt').textContent = L().partOfDay[inf.part]; $('partIco').textContent = PART_EMOJI[inf.part];
-        const slot = (tt - E.DAY_START) / E.STEP; renderDayBar($('daybar'), S.timeline.slice(0, Math.max(0, slot)), tt, E.routine(S)); }, (i / n) * dur * 1000);
+      for (let i = 1; i <= n; i++) setTimeout(() => { SFX.tick(); const tt = time - (n - i) * step; $('digital').textContent = fmtTime(tt); const inf = E.timeInfo(tt); $('partTxt').textContent = L().partOfDay[inf.part]; $('partIco').textContent = PART_EMOJI[inf.part];
+        const slot = (tt - E.DAY_START) / step; renderDayBar($('daybar'), S.timeline.slice(0, Math.max(0, slot)), tt, E.routine(S)); }, (i / n) * dur * 1000);
       setTimeout(res, dur * 1000 + 80);
     });
   }
@@ -515,10 +535,13 @@
     renderDayBar($('sumBar'), sum.timeline, null, E.routine(S), null, sum.bedAt);
     const order = ['work', 'travel', 'eat', 'play', 'shop', 'wait', 'sleep'];
     $('sumLegend').innerHTML = order.filter(c => sum.byCat[c]).map(c => `<div${c === 'sleep' ? ' class="wide"' : ''}><span class="sw" style="background:${E.CAT_COLORS[c]}"></span><span>${Lx.cats[c]}</span>${timeDiscs(sum.byCat[c])}</div>`).join('');
-    const sd = Lx.time.sayDur; let verdict = sum.short ? Lx.summary.short : Lx.summary.rested;
-    if (sum.bonus) verdict += ' ' + fmt(Lx.summary.extra, { n: sum.bonus });
-    const ss = $('sumSleep'); ss.classList.toggle('bad', sum.short > 0);
-    ss.innerHTML = `<span class="fe">${sum.short ? '🌙' : '😴'}</span><span class="ft"><b>${fmt(Lx.summary.sleep, { d: sd(sum.slept) })}</b><br>${verdict}</span>`;
+    const sd = Lx.time.sayDur, child = E.isChild(S);
+    const early = child && sum.wake <= E.CHILD.wakeEarly;
+    let verdict = child ? (early ? Lx.summary.wakeEarly : Lx.summary.wakeLate) : sum.short ? Lx.summary.short : Lx.summary.rested;
+    if (!child && sum.bonus) verdict += ' ' + fmt(Lx.summary.extra, { n: sum.bonus });
+    const ss = $('sumSleep'); ss.classList.toggle('bad', child ? !early : sum.short > 0);
+    const head = child ? fmt(Lx.summary.wake, { t: fmtTime(sum.wake) }) : fmt(Lx.summary.sleep, { d: sd(sum.slept) });
+    ss.innerHTML = `<span class="fe">${child ? (early ? '🌅' : '😴') : sum.short ? '🌙' : '😴'}</span><span class="ft"><b>${head}</b><br>${verdict}</span>`;
     $('sumEarned').innerHTML = `<span class="coin lg"></span>+${sum.earned}`; $('sumSpent').innerHTML = `<span class="coin lg"></span>−${sum.spent}`;
     $('sumKept').innerHTML = `<span class="coin lg"></span>${sum.kept >= 0 ? '+' : '−'}${Math.abs(sum.kept)}`; $('sumWallet').textContent = sum.wallet;
     save(); $('summary').classList.add('open');
@@ -528,9 +551,9 @@
     if (!E.goToSleep(S)) return;
     hideUndo(); save(); $('summary').classList.remove('open');
     const night = $('night'); night.classList.add('open');
-    $('nightClock').innerHTML = clockSVG('n'); setClock('n', absMin(S.day, S.bedAt == null ? E.BEDTIME : S.bedAt), false);
+    $('nightClock').innerHTML = clockSVG('n'); setClock('n', absMin(S.day, S.bedAt == null ? E.bedtimeOf(S) : S.bedAt), false);
     SFX.sleep(); speak(t('night'));
-    setTimeout(() => { const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches; ['nHour', 'nMin'].forEach(id => $(id).style.transition = `transform ${reduce ? .8 : 4.2}s cubic-bezier(.4,0,.2,1)`); setClock('n', absMin(S.day + 1, E.DAY_START), true); }, 350);
+    setTimeout(() => { const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches; ['nHour', 'nMin'].forEach(id => $(id).style.transition = `transform ${reduce ? .8 : 4.2}s cubic-bezier(.4,0,.2,1)`); setClock('n', absMin(S.day + 1, E.isChild(S) ? (S.wakeNext || E.CHILD.wakeEarly) : E.DAY_START), true); }, 350);
     setTimeout(() => {
       const msgs = E.wakeUp(S); S.msgs = msgs; save();
       renderAll(); setSky(S.time, 0.1);
@@ -549,9 +572,10 @@
     $('avatars').innerHTML = AVATARS.map(a => `<button class="avatar-btn" data-avatar="${a}" aria-pressed="${a === settings.avatar}">${a}</button>`).join('');
     const hasSave = !!store.get(SAVE_KEY);
     $('btnContinue').classList.toggle('hidden', !hasSave); $('btnPlay').classList.toggle('hidden', hasSave); $('btnNew').classList.toggle('hidden', !hasSave); $('newConfirm').classList.add('hidden');
+    $('wakeAsk').classList.remove('open');
     $('app').dataset.screen = 'start';
   }
-  // older saves (v1: hourly work + car wash; v2: happy max 6, fridge max 12; v3: fixed 21:00 bedtime; v4: sleep debt, weather, clothes)
+  // older saves (v1: hourly work + car wash; v2: happy max 6, fridge max 12; v3: fixed 21:00 bedtime; v4: sleep debt, weather, clothes; v5: no child game)
   function migrate(s) {
     if (s.v < 2) { s.lunchbox = s.lunchbox || 0; delete s.carwash; s.lastBand = s.lastBand || 'breakfast'; if (s.phase === 'day' && s.time >= E.BEDTIME) s.phase = 'summary'; }
     if (s.v < 4) { s.slept = 10 * 60; s.bedAt = s.phase === 'day' ? null : Math.min(Math.max(s.time || E.BEDTIME, E.BEDTIME), E.LATEST_BED); }
@@ -563,17 +587,31 @@
       if (s.wish && !E.ITEMS[s.wish]) s.wish = null;
       s.happy = Math.max(1, Math.min(E.HAPPY_MAX, s.happy));
     }
-    s.v = 5;
+    if (s.v < 6) { s.mode = 'adult'; s.wake = E.DAY_START; s.chores = {}; } // every saved game so far is a grown-up's day
+    s.v = 6;
     return s;
   }
-  function startGame(fresh) {
+  function startGame(fresh, wake) {
     const saved = fresh ? null : store.get(SAVE_KEY);
     if (saved && saved.v >= 1 && saved.day) { S = migrate(saved); }
-    else { S = E.newGame(settings.avatar, (Date.now() % 100000) | 0); S.msgs = [{ key: 'plan', band: E.routine(S)[0].id }]; }
+    else {
+      S = E.newGame(settings.avatar, (Date.now() % 100000) | 0, settings.mode);
+      if (wake != null && wake > S.time) { // "we woke up late": the day starts later, and the bar shows the lie-in
+        for (let i = 0; i < (wake - E.DAY_START) / E.stepOf(S); i++) S.timeline[i] = 'sleep';
+        S.wake = wake; S.time = wake;
+      }
+      S.msgs = [{ key: 'plan', band: E.routine(S)[0].id }];
+    }
     hideUndo(); applyI18n(); renderAll(); $('app').dataset.screen = 'game'; save();
     if (S.phase === 'summary') showSummary();
     else if (S.phase === 'night') { S.phase = 'summary'; showSummary(); }
     else setBubble(S.msgs);
+  }
+  // A child's first morning is the real one: ask whether we got up late today, and start the day there. From tomorrow on
+  // it is last night's bedtime that decides it, which is the whole point of the bed card.
+  function askWake() {
+    if (settings.mode !== 'child') { startGame(true); return; }
+    applyI18n(); $('wakeAsk').classList.add('open'); speak(t('wakeQ'));
   }
   function resetGame() { store.del(SAVE_KEY); S = null; closeSheet('settings'); $('resetConfirm').classList.add('hidden'); renderStart(); }
 
@@ -588,10 +626,13 @@
     if (b.dataset.close) { closeSheet(b.dataset.close); SFX.tap(); return; }
     if (b.dataset.lang) { settings.lang = b.dataset.lang; saveSettings(); applyI18n(); if (S) renderAll(); else renderStart(); return; }
     if (b.dataset.avatar) { settings.avatar = b.dataset.avatar; saveSettings(); document.querySelectorAll('.avatar-btn').forEach(x => x.setAttribute('aria-pressed', x.dataset.avatar === settings.avatar)); SFX.happy(); return; }
-    if (b.id === 'btnPlay') { SFX.tap(); startGame(true); return; }
+    if (b.dataset.mode) { settings.mode = b.dataset.mode; saveSettings(); renderStart(); SFX.happy(); return; }
+    if (b.id === 'btnPlay') { SFX.tap(); askWake(); return; }
+    if (b.id === 'btnWakeEarly') { SFX.tap(); $('wakeAsk').classList.remove('open'); startGame(true, E.CHILD.wakeEarly); return; }
+    if (b.id === 'btnWakeLate') { SFX.tap(); $('wakeAsk').classList.remove('open'); startGame(true, E.CHILD.wakeLate); return; }
     if (b.id === 'btnContinue') { SFX.tap(); startGame(false); return; }
     if (b.id === 'btnNew') { SFX.tap(); $('newConfirm').classList.remove('hidden'); b.classList.add('hidden'); $('btnContinue').classList.add('hidden'); return; }
-    if (b.id === 'btnNewYes') { SFX.tap(); startGame(true); return; }
+    if (b.id === 'btnNewYes') { SFX.tap(); askWake(); return; }
     if (b.id === 'btnNewNo') { SFX.tap(); $('newConfirm').classList.add('hidden'); $('btnNew').classList.remove('hidden'); $('btnContinue').classList.remove('hidden'); return; }
     if (b.id === 'btnUndo') { doUndo(); return; }
     if (b.dataset.act) { doAction(b.dataset.act, b); return; }
@@ -653,5 +694,5 @@
   $('clock').innerHTML = clockSVG('c');
   renderStart();
   // expose for tests
-  window.TS = { get state() { return S; }, settings, start: startGame, act: doAction, travel: (d, m) => { travelDest = d; return doTravel(m); }, goTo: openTravelTo, buy: doBuy, wish: doWish, sleep: goToSleep, wake, showSummary, undo: doUndo, engine: E, isBusy: () => busy };
+  window.TS = { get state() { return S; }, settings, start: startGame, act: doAction, travel: (d, m) => { travelDest = d; return doTravel(m); }, goTo: openTravelTo, buy: doBuy, wish: doWish, sleep: goToSleep, wake, showSummary, undo: doUndo, render: renderAll, engine: E, isBusy: () => busy };
 })();
