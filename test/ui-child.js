@@ -8,8 +8,54 @@ const file = 'file://' + path.join(__dirname, '..', 'dist', 'index.html');
 const E = require('../src/engine.js');
 const fail = (m) => { console.error(m); process.exit(1); };
 
+// A grown-up's save from before the child's game existed. Picking the child and tapping "Keep playing" used to load
+// this and offer to cook and eat: the picker only ever applied to new games.
+const GROWNUP_SAVE = JSON.stringify({
+  v: 5, avatar: '\u{1F43B}', seed: 123, day: 3, time: 8 * 60, coins: 6, loc: 'home',
+  tummy: 3, happy: 4, fridge: 4, lunchbox: 0, wardrobe: {}, toys: [], wish: null, wishReadyTold: false,
+  timeline: [], today: { earned: 0, spent: 0 }, flags: {}, phase: 'day', msgs: [], lastBand: 'breakfast',
+  totals: { earned: 0, spent: 0 }, slept: 600, bedAt: null,
+});
+
+// Every way into a game leads to the game that was picked, whatever is already saved on the device.
+async function startRoutes(browser) {
+  const run = async (name, seed, steps) => {
+    const ctx = await browser.newContext({ ...devices['iPhone 13'] });
+    const page = await ctx.newPage();
+    const errs = []; page.on('pageerror', e => errs.push(e.message));
+    await page.goto(file); await page.waitForTimeout(250);
+    if (seed) { await page.evaluate((v) => localStorage.setItem('timespent.save.v1', v), seed); await page.reload(); await page.waitForTimeout(300); }
+    await page.evaluate(() => { TS.settings.voice = false; });
+    for (const sel of steps) {
+      await page.evaluate((q) => { const el = document.querySelector(q); if (el && !el.classList.contains('hidden')) el.click(); }, sel);
+      await page.waitForTimeout(250);
+    }
+    const out = await page.evaluate(() => TS.state && { mode: TS.state.mode, day: TS.state.day, acts: TS.engine.actions(TS.state).map(a => a.id) });
+    await ctx.close();
+    if (errs.length) fail(`${name}: page errors ${errs}`);
+    return out;
+  };
+  const cook = (o) => o && o.acts.includes('cook');
+
+  const fresh = await run('fresh', null, ['[data-mode="child"]', '#btnPlay', '#btnWakeEarly']);
+  if (!fresh || fresh.mode !== 'child' || cook(fresh)) fail('a fresh child game is not the child game: ' + JSON.stringify(fresh));
+
+  const grown = await run('grown-up', null, ['[data-mode="adult"]', '#btnPlay']);
+  if (!grown || grown.mode !== 'adult' || !cook(grown)) fail('the grown-up game is not the grown-up game: ' + JSON.stringify(grown));
+
+  // the reported bug: an old grown-up save must never be what "Keep playing" gives you after picking the child
+  const kept = await run('old save + child + keep playing', GROWNUP_SAVE, ['[data-mode="child"]', '#btnContinue', '#btnPlay', '#btnWakeEarly']);
+  if (!kept || kept.mode !== 'child' || cook(kept)) fail('picking the child still continued a grown-up save: ' + JSON.stringify(kept));
+
+  // and the grown-up's own day is still there, untouched, on the other tile
+  const back = await run('old save + grown-up + keep playing', GROWNUP_SAVE, ['[data-mode="adult"]', '#btnContinue']);
+  if (!back || back.mode !== 'adult' || back.day !== 3) fail('the saved grown-up day was lost: ' + JSON.stringify(back));
+  console.log('start routes ok');
+}
+
 (async () => {
   const browser = await chromium.launch({ executablePath: process.env.TS_CHROMIUM || undefined });
+  await startRoutes(browser);
   const ctx = await browser.newContext({ ...devices['iPhone 13'] });
   const page = await ctx.newPage();
   const errors = []; page.on('pageerror', e => errors.push(e.message));

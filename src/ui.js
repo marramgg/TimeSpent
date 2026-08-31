@@ -2,7 +2,10 @@
 (() => {
   const E = TSEngine;
   const $ = (id) => document.getElementById(id);
-  const SAVE_KEY = 'timespent.save.v1', SET_KEY = 'timespent.settings.v1';
+  // A save per game, so picking the child or the grown-up on the start screen chooses which one you carry on with:
+  // a grown-up's day cannot be continued as a child's, and neither should quietly overwrite the other.
+  const SAVE_KEY = 'timespent.save.v1', CHILD_SAVE_KEY = 'timespent.save.child.v1', SET_KEY = 'timespent.settings.v1';
+  const saveKey = (mode) => mode === 'child' ? CHILD_SAVE_KEY : SAVE_KEY;
   const AVATARS = ['🐻', '🦊', '🐰', '🐨', '🐷', '🐸'];
   const PART_EMOJI = { morning: '🌅', afternoon: '☀️', evening: '🌇', night: '🌙' };
   const HOLD_MS = 600;     // press longer than this and the card is only read aloud, not played
@@ -24,7 +27,7 @@
   let busy = false;
   const L = () => I18N[settings.lang];
   const t = (path, vars) => { const v = path.split('.').reduce((o, k) => (o == null ? o : o[k]), L()); return vars ? fmt(v, vars) : v; };
-  const save = () => { if (S) store.set(SAVE_KEY, S); };
+  const save = () => { if (S) store.set(saveKey(S.mode), S); };
 
   // ---------- audio ----------
   let AC = null;
@@ -570,7 +573,7 @@
     applyI18n();
     $('startClock').innerHTML = clockSVG('s'); setClock('s', 420, false);
     $('avatars').innerHTML = AVATARS.map(a => `<button class="avatar-btn" data-avatar="${a}" aria-pressed="${a === settings.avatar}">${a}</button>`).join('');
-    const hasSave = !!store.get(SAVE_KEY);
+    const hasSave = !!store.get(saveKey(settings.mode)); // "Keep playing" belongs to the game that is picked
     $('btnContinue').classList.toggle('hidden', !hasSave); $('btnPlay').classList.toggle('hidden', hasSave); $('btnNew').classList.toggle('hidden', !hasSave); $('newConfirm').classList.add('hidden');
     $('wakeAsk').classList.remove('open');
     $('app').dataset.screen = 'start';
@@ -591,8 +594,17 @@
     s.v = 6;
     return s;
   }
+  // The first build of the child's game wrote its save under the grown-up's key. Move it across once, so a day already
+  // played as a child is not read back as a grown-up's — which is what made "Keep playing" offer to cook and eat.
+  function sortOutSaves() {
+    const s = store.get(SAVE_KEY);
+    if (s && s.mode === 'child') { if (!store.get(CHILD_SAVE_KEY)) store.set(CHILD_SAVE_KEY, s); store.del(SAVE_KEY); }
+    // Someone who has only ever played the grown-up's day and never picked a game should still find it under
+    // "Keep playing" — the child's day is one tap away. Once they pick a game themselves, that choice sticks.
+    if ((store.get(SET_KEY) || {}).mode == null && store.get(SAVE_KEY) && !store.get(CHILD_SAVE_KEY)) settings.mode = 'adult';
+  }
   function startGame(fresh, wake) {
-    const saved = fresh ? null : store.get(SAVE_KEY);
+    const saved = fresh ? null : store.get(saveKey(settings.mode));
     if (saved && saved.v >= 1 && saved.day) { S = migrate(saved); }
     else {
       S = E.newGame(settings.avatar, (Date.now() % 100000) | 0, settings.mode);
@@ -613,7 +625,7 @@
     if (settings.mode !== 'child') { startGame(true); return; }
     applyI18n(); $('wakeAsk').classList.add('open'); speak(t('wakeQ'));
   }
-  function resetGame() { store.del(SAVE_KEY); S = null; closeSheet('settings'); $('resetConfirm').classList.add('hidden'); renderStart(); }
+  function resetGame() { store.del(saveKey(S ? S.mode : settings.mode)); S = null; closeSheet('settings'); $('resetConfirm').classList.add('hidden'); renderStart(); }
 
   // ---------- events ----------
   let heldEl = null, holdTm = null;     // the card being held down long enough to mean "just read it to me"
@@ -692,6 +704,7 @@
 
   // ---------- boot ----------
   $('clock').innerHTML = clockSVG('c');
+  sortOutSaves();
   renderStart();
   // expose for tests
   window.TS = { get state() { return S; }, settings, start: startGame, act: doAction, travel: (d, m) => { travelDest = d; return doTravel(m); }, goTo: openTravelTo, buy: doBuy, wish: doWish, sleep: goToSleep, wake, showSummary, undo: doUndo, render: renderAll, engine: E, isBusy: () => busy };
