@@ -73,6 +73,16 @@
       <section class="place">
         <div class="places" id="places"></div>
         <div class="undobar" id="undoBar"><button class="btn secondary" id="btnUndo"></button></div>
+        <!-- The day's question. The words are in the bubble (one message on screen); these are the two answers, and the
+             "no" button shows what you get instead — a poo for unwashed hands. -->
+        <div class="question hidden" id="question">
+          <span class="qtier" id="qTier"></span>
+          <p class="qtext" id="qText"></p>
+          <div class="qbtns">
+            <div role="button" tabindex="0" class="qbtn yes" data-ans="yes" data-min="0"><span class="qi"></span><span class="ql"></span><span class="qc"></span></div>
+            <div role="button" tabindex="0" class="qbtn no" data-ans="no" data-min="0"><span class="qi"></span><span class="ql"></span><span class="qc"></span></div>
+          </div>
+        </div>
         <div class="actions" id="actions"></div>
       </section>
     </div>

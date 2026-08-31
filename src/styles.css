@@ -194,6 +194,30 @@ svg { display: block; }
 /* a child has no fridge to keep an eye on — grown-ups do the shopping — so the row is three meters wide */
 .meters.nofridge { grid-template-columns: 1fr 1.1fr 1fr; }
 .meters.nofridge .meter.fridge { display: none; }
+/* a child's day has no coins in it either: two meters, side by side and twice as legible */
+.meters.nocoins { grid-template-columns: 1fr 1fr; }
+.meters.nocoins .meter.fridge, .meters.nocoins .meter.wallet { display: none; }
+
+/* ---------- the day's question: two answers, as big as the grid they replace ---------- */
+.question { flex: 1; display: flex; flex-direction: column; gap: 8px; min-height: 0; padding: 2px; }
+.question.hidden { display: none; }
+.qtier { align-self: center; font-weight: 800; font-size: .82em; padding: .2em .9em; border-radius: 999px;
+  background: var(--paper); border: 2px solid var(--ink-line); color: var(--ink-soft); }
+.question.must .qtier { background: var(--gold-light); color: var(--ink); }
+.qtext { margin: 0; text-align: center; font-family: var(--font-display); font-weight: 700; font-size: 1.15em; line-height: 1.15; text-wrap: balance; }
+.qbtns { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; min-height: 0; }
+.qbtn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 80px;
+  border-radius: 20px; border: var(--line) solid var(--ink-line); box-shadow: 0 6px 0 var(--ink-line); background: var(--paper);
+  transition: transform .1s; cursor: pointer; }
+.qbtn:active { transform: translateY(3px); box-shadow: 0 3px 0 var(--ink-line); }
+.qbtn .qi { font-size: clamp(34px, 11vh, 60px); line-height: 1.05; }
+.qbtn .ql { font-family: var(--font-display); font-weight: 700; font-size: 1.15em; }
+.qbtn .qc { display: flex; align-items: center; gap: 4px; min-height: 18px; }
+.qbtn.yes { background: #DFF3D2; }
+.qbtn.no { background: #FBE0E4; }
+/* "Oops, go back" floats over the bottom of the screen. The cards scroll under it, but the two answers do not — they
+   fill the space — so give them room while it is there. */
+.undobar.show ~ .question { padding-bottom: 56px; }
 .meter.fridge .apples { display: flex; align-items: center; gap: 6px; min-height: 14px; }
 .meter.fridge .stack { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1px; justify-items: center; max-width: 76px; font-size: 10px; line-height: 1; max-height: 24px; overflow: hidden; }
 .meter.fridge .stack .apple { display: block; width: 11px; height: 11px; }

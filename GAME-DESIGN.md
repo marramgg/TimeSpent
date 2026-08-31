@@ -85,8 +85,39 @@ tonight's sleep) → sleep animation (clock spins from bedtime to 7:00) → new 
 ## The child's day (the default game)
 
 A five-year-old does not choose whether to go to school, and does not choose when dinner is. What a child does choose
-is **the order and the speed of the routine**, and what to do with what is left. So every bit of the routine is a card
-the child presses — and every quarter of an hour it takes is a quarter of an hour not spent playing.
+is **whether to do each bit of the routine, and how long the day has left for playing**. So the day does not lay the
+routine out as cards to hunt through — **it asks, one question at a time**, and both answers are real.
+
+### The day asks; the child answers
+While a question is up it is the only thing on screen: its words sit above two big buttons, everything else waits, and
+the whole thing is read aloud. **Yes costs the time it takes. No costs no time at all** — which is exactly why it is
+tempting — **and costs a meter instead, there and then.**
+
+The **"no" button shows what you get instead**, so the price is a picture rather than a word a non-reader cannot read:
+a poo for unwashed hands, pyjamas for not getting dressed, a skunk for no bath.
+
+Each question says what kind of thing it is, so *has to* and *good for me* are told apart **before** the answer:
+
+| Kind | Badge | What "no" does |
+|---|---|---|
+| **must** | "I have to" (gold) | Refused, with the reason. The question stays and nothing moves. |
+| **should** | "Good for me" | Allowed. Costs a meter immediately, and says so. |
+| **choice** | "You choose" | Bedtime only: costs tomorrow morning, not a meter. |
+
+| Question | Yes | No | What "no" costs |
+|---|---|---|---|
+| Shall we have breakfast? | 🥣 | 😫 | ❤️−2 😊−1 |
+| Shall we get dressed? | 👕 | 🩲 | *must* — "We cannot go out in pyjamas!" |
+| Shall we brush our teeth? | 🪥 | 🦠 | ❤️−1 |
+| Shall we have lunch? *(weekends)* | 🍲 | 😫 | ❤️−2 |
+| Shall we wash our hands? | 🧼 | 💩 | ❤️−1 |
+| Shall we tidy up? | 🧹 | 🌪️ | 😊−1 |
+| Shall we have dinner? | 🍽️ | 😫 | ❤️−2 |
+| Shall we have a bath? *(every 2nd day)* | 🛁 | 🦨 | ❤️−1 |
+| Shall we go to bed now? | 🛏️ 🌅 7:00 | 🦉 😴 7:30 | tomorrow starts half an hour late |
+
+Between the questions the cards come back, and there is only ever one worth pressing: **play**. That is the whole
+trade — every yes is a quarter of an hour that was not play.
 
 The clock moves in **quarter hours** here (the grown-up's day still moves in half hours), because that is the size of
 the choices: breakfast, getting dressed, brushing teeth are a quarter each.
@@ -103,14 +134,14 @@ on the answer. From day 2 on, last night's bed card decides it, and the morning 
 | Time | What | Who decides |
 |---|---|---|
 | 7:00 or 7:30 | Wake up | last night's bedtime |
-| → 8:15 | 🥣 breakfast · 👕 get dressed · 🪥 teeth (a quarter of an hour each), then play with what is left | the child |
+| → 8:15 | asked in turn: 🥣 breakfast · 👕 get dressed · 🪥 teeth (a quarter of an hour each), then play with what is left | the child |
 | 15 min | Walk to school. Leaving before 8:15 means arriving before the bell, with time to play on the way (😊 +1) | falls out of the morning |
 | 8:30–17:30 | School — **one card**. The plan strip still shows the shape of it: forest, lunch at 12, activities at 13 | nobody |
-| 17:45 | Home. 🧼 wash hands · 🧹 tidy up, then free time | the child |
+| 17:45 | Home. Asked: 🧼 wash hands · 🧹 tidy up, then free time | the child |
 | 18:30 | 🍽️ dinner | nobody |
 | every 2nd day | 🛁 bath (it counts as playing) | nobody |
-| evening | 🪥 teeth, then play until bed | the child |
-| 20:30 or 21:00 | 🛏️ bed | **the child** |
+| evening | Asked: 🪥 teeth, then play until bed | the child |
+| 20:30 | 🛏️ "Shall we go to bed now?" — no, and the day ends itself at 21:00 | **the child** |
 
 Weekends: no school — the same routine around free play, the park and lunch at home.
 
@@ -119,21 +150,15 @@ The fridge and the tummy belong to the grown-up's day; a child is fed and shoppe
 and Happy is the *play* meter. Each bit of looking after yourself is +1 health; playing is +1 happy a quarter.
 Neither starts full in the morning (they carry over between 2 and 4), so there is always room for the day to move them.
 
-**Skipping is allowed, and it says so at the moment it bites** — never before, and never as a telling-off:
-| What was skipped | What it costs | What the game says |
-|---|---|---|
-| Breakfast, at the school gate | ❤️ −2 😊 −1 | "I had no time for breakfast. My tummy hurts." |
-| Teeth, at the school gate | ❤️ −1 | "No time to brush my teeth this morning." |
-| Arriving after the bell | 😊 −1 | "We are late for school! It is {t} already." |
-| Washing hands, at dinner | ❤️ −1 | "Dinner with dirty hands. Wash them next time!" |
-| Teeth, at bedtime | ❤️ −1 😊 −1 | "Oh no, I forgot to brush my teeth." |
-| Getting dressed | you cannot leave the house | "Get dressed first!" |
+Saying no is never a telling-off — the bear just says what happened: *"Yuck! Dirty hands make my tummy poorly."*
+The only thing the clock still judges by itself is the bell: arriving after 8:30 costs 😊 −1, and leaving early enough
+to dawdle on the way earns 😊 +1.
 
-There is no dead end: a child is never trapped without food, and away from home there is always a card to press.
+There is no dead end: a child is never trapped without food, and there is always something to press.
 
-### Money in the child's day
-No wages — **one coin of pocket money each morning**. The wish-and-save loop is the same as the grown-up's: the park
-opens on day 2, the shops on day 3, the toy stall and wishes on day 4, and a teddy is five mornings of saving.
+### No money in the child's day
+A five-year-old does not earn, so **the child's day has no coins at all** — no wallet, no wish, no shops. Money is the
+grown-up's day, and it is one tap away on the start screen. What the child spends is time.
 
 ## Look
 Picture-book wooden-toy world: sky dome with a travelling sun, chunky outlined cards, coins and apples as countable
