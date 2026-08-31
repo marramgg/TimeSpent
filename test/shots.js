@@ -12,7 +12,7 @@ const targets = [
 ];
 
 (async () => {
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ executablePath: process.env.TS_CHROMIUM || undefined });
   for (const tgt of targets) {
     const ctx = await browser.newContext({ ...tgt.device, reducedMotion: 'no-preference' });
     const page = await ctx.newPage();

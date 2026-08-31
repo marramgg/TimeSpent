@@ -84,10 +84,9 @@ svg { display: block; }
   .meter .lab span[data-i18n] { display: none; } .meter .lab { font-size: 1.05em; }
   .meter, .wallet { padding: 4px 6px; }
   .meter .segs { gap: 2px; } .meter .segs i { height: 11px; }
-  .meter.fridge .stack { grid-template-columns: repeat(6, 9px); font-size: 8px; } .meter.fridge .stack .apple { width: 9px; height: 9px; }
-  .wallet .coinstack { grid-template-columns: repeat(5, 12px); gap: 2px; } .wallet .count { font-size: 1.3em; min-width: 1.1em; }
+  .meter.fridge .stack { grid-template-columns: repeat(6, minmax(0, 1fr)); font-size: 8px; max-width: 62px; } .meter.fridge .stack .apple { width: 9px; height: 9px; }
+  .wallet .coinstack { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; max-width: 74px; } .wallet .count { font-size: 1.3em; min-width: 1.1em; }
   .coin { width: 12px; height: 12px; }
-  .weatherchip .wt { display: none; } .weatherchip { padding: .2em .5em; font-size: 1.1em; }
   .daylabel .wk { font-size: .65em; padding: .15em .5em; }
   .daylabel .wd { font-size: .95em; }
 }
@@ -95,17 +94,16 @@ svg { display: block; }
 .daylabel .n { font-weight: 700; font-size: 1.1em; }
 .daylabel .wd { font-weight: 600; color: var(--ink-soft); }
 .daylabel .wk { font-size: .75em; font-weight: 700; background: var(--pink); color: #fff; padding: .15em .6em; border-radius: 999px; border: 2px solid var(--ink-line); }
-.weatherchip { display: inline-flex; align-items: center; gap: .35em; font-family: var(--font-display); font-weight: 600; background: var(--paper); border: 2px solid var(--ink-line); border-radius: 999px; padding: .2em .7em; }
 .gear { width: 40px; height: 40px; border-radius: 50%; font-size: 19px; display: grid; place-items: center; background: var(--paper); border: 2px solid var(--ink-line); opacity: .8; position: relative; }
 .gear .ring { position: absolute; inset: -4px; border-radius: 50%; border: 4px solid var(--sky-blue); clip-path: inset(0 100% 0 0); opacity: 0; }
 .gear.holding .ring { opacity: 1; animation: holdfill 1.1s linear forwards; }
 @keyframes holdfill { to { clip-path: inset(0 0 0 0); } }
 
-.body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 0 calc(var(--sar) + 12px) 0 calc(var(--sal) + 12px); }
+.body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; padding: 0 calc(var(--sar) + 12px) 0 calc(var(--sal) + 12px); }
 
 /* hero: sky + clock + beads */
 .hero { position: relative; border-radius: var(--radius); border: var(--line) solid var(--ink-line); overflow: hidden; background: var(--paper); flex: 0 0 auto; }
-.sky { position: relative; height: clamp(88px, calc(var(--vhu) * 17), 200px); overflow: hidden; }
+.sky { position: relative; height: clamp(44px, calc(var(--vhu) * 10.5), 200px); overflow: hidden; }
 .sky .layer { position: absolute; inset: 0; transition: opacity 1s ease; }
 .sky .day { background: linear-gradient(180deg, #55B7F0 0%, #A9E0FF 70%, #DDF4FF 100%); }
 .sky .dusk { background: linear-gradient(180deg, #7A6BC8 0%, #F29A7A 55%, #FFD48A 100%); opacity: 0; }
@@ -132,18 +130,9 @@ svg { display: block; }
 .sky .cloud i:nth-child(2) { width: 45%; height: 45%; left: 0; top: 40%; }
 .sky .cloud i:nth-child(3) { width: 50%; height: 50%; left: 48%; top: 38%; }
 @keyframes drift { from { transform: translateX(0); } to { transform: translateX(-140%); } }
-.sky.rain .cloud i { background: #B9C3CF; }
-.sky .rain-layer, .sky .snow-layer { position: absolute; inset: 0; opacity: 0; transition: opacity 1s; pointer-events: none; }
-.sky.rain .rain-layer { opacity: .8; background-image: repeating-linear-gradient(115deg, transparent 0 14px, rgba(255,255,255,.55) 14px 16px); background-size: 40px 40px; animation: rainfall .6s linear infinite; }
-@keyframes rainfall { from { background-position: 0 0; } to { background-position: -20px 40px; } }
-.sky.cold .snow-layer { opacity: .9; background-image: radial-gradient(3px 3px at 20% 20%, #fff 60%, transparent 62%), radial-gradient(3px 3px at 60% 50%, #fff 60%, transparent 62%), radial-gradient(2.5px 2.5px at 85% 30%, #fff 60%, transparent 62%), radial-gradient(2.5px 2.5px at 40% 75%, #fff 60%, transparent 62%); background-size: 120px 120px; animation: snowfall 6s linear infinite; }
-@keyframes snowfall { from { background-position: 0 -120px; } to { background-position: 30px 0; } }
-.sky.cold .day { filter: saturate(.6) brightness(1.05); }
-.sky.rain .day { filter: saturate(.35) brightness(.85); }
-.sky.rain .sun { filter: grayscale(.5) opacity(.35); } .sky.rain .sun::after { display: none; }
 
-.clockrow { display: flex; align-items: center; justify-content: center; gap: clamp(10px, 3vw, 28px); padding: 4px 12px 2px; margin-top: calc(-1 * clamp(44px, calc(var(--vhu) * 12), 92px)); position: relative; z-index: 2; }
-.clock { width: clamp(100px, calc(var(--vhu) * 19), 180px); aspect-ratio: 1; filter: drop-shadow(0 6px 0 rgba(51,36,26,.9)); }
+.clockrow { display: flex; align-items: center; justify-content: center; gap: clamp(10px, 3vw, 28px); padding: 4px 12px 2px; margin-top: calc(-1 * clamp(34px, calc(var(--vhu) * 9), 92px)); position: relative; z-index: 2; }
+.clock { width: clamp(74px, calc(var(--vhu) * 13.5), 180px); aspect-ratio: 1; filter: drop-shadow(0 6px 0 rgba(51,36,26,.9)); }
 .clock .hand { transform-origin: 100px 100px; transition: transform .6s cubic-bezier(.5,0,.3,1); }
 .clock.spin .hand { transition: transform 4.5s cubic-bezier(.4,0,.2,1); }
 .digital { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; font-family: var(--font-display); background: var(--paper); border: var(--line) solid var(--ink-line); border-radius: 18px; padding: .3em .7em .4em; box-shadow: 0 5px 0 var(--ink-line); min-width: 5.2em; }
@@ -151,7 +140,7 @@ svg { display: block; }
 .digital .p { font-size: .9em; font-weight: 600; color: var(--ink-soft); text-transform: lowercase; }
 .digital .ico { font-size: 1em; }
 
-.daybar { position: relative; padding: 12px 12px 4px; }
+.daybar { position: relative; padding: 6px 12px 4px; }
 .daybar .cells { display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px; }
 .daybar .cells .c { height: clamp(8px, calc(var(--vhu) * 1.5), 14px); border-radius: 3px; background: #E9DFC7; border: 1.5px solid rgba(51,36,26,.14); display: flex; overflow: hidden; }
 .daybar .cells .c b { flex: 1; display: block; height: 100%; }
@@ -159,10 +148,12 @@ svg { display: block; }
 .daybar .cells .c.night { background: var(--night-2); border-color: rgba(51,36,26,.35); background-image: repeating-linear-gradient(135deg, transparent 0 4px, rgba(255,255,255,.12) 4px 6px); }
 .daybar .cells .c:nth-child(14) { margin-right: 1px; }
 .daybar .plan { position: relative; height: clamp(13px, calc(var(--vhu) * 2.2), 19px); margin: 3px 0 0; }
-.daybar .plan .band { position: absolute; top: 0; height: 100%; box-sizing: border-box; border: 1.5px solid rgba(51,36,26,.35); border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; }
+/* the whole bar is the tap target — it reads out whatever is happening now, and costs no extra height */
+.daybar[role="button"] { cursor: pointer; }
+.daybar .plan .band { position: absolute; top: 0; height: 100%; box-sizing: border-box; border: 1.5px solid rgba(51,36,26,.35); border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden; pointer-events: none; }
 .daybar .plan .band em { font-style: normal; font-size: clamp(9px, calc(var(--vhu) * 1.5), 13px); line-height: 1; }
-.daybar .labels { position: relative; height: 11px; margin-top: 1px; font-family: var(--font-display); font-size: .58em; color: var(--ink-soft); line-height: 1; }
-.daybar .labels span { position: absolute; top: 0; padding-left: 1px; }
+.daybar .labels { position: relative; height: 13px; margin-top: 1px; font-size: 10px; line-height: 1; }
+.daybar .labels span { position: absolute; top: 0; transform: translateX(-40%); }
 .daybar .track { position: absolute; left: 12px; right: 12px; top: 12px; bottom: 16px; pointer-events: none; }
 .daybar .now { position: absolute; top: -6px; bottom: 0; width: 2px; margin-left: -1px; background: var(--ink); border-radius: 2px; pointer-events: none; }
 .daybar .now::before { content: ''; position: absolute; top: -6px; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top: 7px solid var(--ink); border-bottom: 0; }
@@ -179,15 +170,19 @@ svg { display: block; }
 .avatar { width: clamp(46px, calc(var(--vhu) * 8), 78px); height: clamp(46px, calc(var(--vhu) * 8), 78px); border-radius: 50%; background: var(--paper); border: var(--line) solid var(--ink-line); display: grid; place-items: center; font-size: clamp(26px, calc(var(--vhu) * 4.5), 44px); flex: 0 0 auto; box-shadow: 0 4px 0 var(--ink-line); }
 .avatar.bounce { animation: bounce .5s; }
 @keyframes bounce { 30% { transform: translateY(-8px) scale(1.05); } 60% { transform: translateY(2px); } }
-.bubble { position: relative; flex: 1; min-height: clamp(40px, calc(var(--vhu) * 6.5), 60px); background: var(--paper); border: var(--line) solid var(--ink-line); border-radius: 18px; padding: .35em 2.7em .35em .7em; font-weight: 700; font-size: .92em; display: flex; align-items: center; box-shadow: 0 4px 0 var(--ink-line); }
+.bubble { position: relative; flex: 1; min-height: clamp(40px, calc(var(--vhu) * 6.5), 60px); background: var(--paper); border: var(--line) solid var(--ink-line); border-radius: 18px; padding: .35em 3.5em .35em .7em; cursor: pointer; font-weight: 700; font-size: .92em; display: flex; align-items: center; box-shadow: 0 4px 0 var(--ink-line); }
 .bubble::before { content: ''; position: absolute; left: -13px; top: 50%; width: 18px; height: 18px; background: var(--paper); border-left: var(--line) solid var(--ink-line); border-bottom: var(--line) solid var(--ink-line); transform: translateY(-50%) rotate(45deg); }
 .bubble p { margin: 0; text-wrap: pretty; }
-.bubble .speak { position: absolute; right: 7px; top: 50%; transform: translateY(-50%); width: 38px; height: 38px; border-radius: 50%; font-size: 19px; display: grid; place-items: center; background: var(--paper-2); border: 2px solid var(--ink-line); }
+.bubble .speak { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%; font-size: 19px; display: grid; place-items: center; background: var(--paper-2); border: 2px solid var(--ink-line); }
 .bubble .speak.on { background: var(--gold-light); }
+/* more to say: the bubble shows one message at a time and this chevron means "tap for the next one" */
+.bubble .more { position: absolute; right: 52px; top: 50%; transform: translateY(-50%); font-size: 15px; color: var(--berry); animation: nudge 1.1s ease-in-out infinite; }
+@keyframes nudge { 0%, 100% { transform: translateY(-50%) translateX(0); } 50% { transform: translateY(-50%) translateX(3px); } }
+@media (prefers-reduced-motion: reduce) { .bubble .more { animation: none; } }
 
 .meters { display: grid; grid-template-columns: 1fr 1.1fr 1fr 1fr; gap: 8px; grid-column: 1 / -1; }
 .meter.fridge .apples { display: flex; align-items: center; gap: 6px; min-height: 14px; }
-.meter.fridge .stack { display: grid; grid-template-columns: repeat(6, 11px); gap: 1px; font-size: 10px; line-height: 1; max-height: 24px; overflow: hidden; }
+.meter.fridge .stack { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1px; justify-items: center; max-width: 76px; font-size: 10px; line-height: 1; max-height: 24px; overflow: hidden; }
 .meter.fridge .stack .apple { display: block; width: 11px; height: 11px; }
 .meter.fridge .stack .empty { color: var(--ink-soft); font-weight: 800; }
 .meter.fridge .lab .count { font-family: var(--font-display); font-weight: 700; font-size: 1.15em; font-variant-numeric: tabular-nums; margin-left: auto; }
@@ -216,7 +211,7 @@ svg { display: block; }
 .meter.low .lab { animation: wiggle 1.2s ease-in-out infinite; }
 @keyframes wiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-6deg); } 75% { transform: rotate(6deg); } }
 .wallet { background: var(--paper); border: var(--line) solid var(--ink-line); border-radius: 16px; padding: 6px 10px; display: flex; align-items: center; gap: 8px; min-width: 0; }
-.wallet .coinstack { display: grid; grid-template-columns: repeat(5, 14px); gap: 3px; }
+.wallet .coinstack { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; justify-items: center; max-width: 90px; }
 .wallet .count { font-family: var(--font-display); font-weight: 700; font-size: 1.5em; font-variant-numeric: tabular-nums; min-width: 1.4em; text-align: center; }
 .meter.wallet { flex-direction: column; align-items: stretch; gap: 4px; }
 .meter.wallet .lab .count { margin-left: auto; font-size: 1.15em; min-width: 0; }
@@ -235,7 +230,7 @@ svg { display: block; }
 .wishbox.ready { background: var(--gold-light); border-style: solid; }
 
 /* place + actions */
-.place { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--paper); border: var(--line) solid var(--ink-line); border-radius: var(--radius) var(--radius) 0 0; border-bottom: 0; overflow: hidden; }
+.place { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--paper); border: var(--line) solid var(--ink-line); border-radius: var(--radius) var(--radius) 0 0; border-bottom: 0; overflow: hidden; }
 .places { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; padding: 5px 8px; background: var(--wood); border-bottom: var(--line) solid var(--ink-line); }
 .ptile { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-height: clamp(44px, calc(var(--vhu) * 7.5), 60px); padding: 2px 2px; border-radius: 14px; background: var(--paper); border: var(--line) solid rgba(51,36,26,.35); cursor: pointer; text-align: center; transition: transform .08s; }
 .ptile:active { transform: translateY(2px); }
@@ -249,8 +244,12 @@ svg { display: block; }
 .ptile.closed:not(.here) { opacity: .7; }
 .ptile.closed:not(.here) .pe { filter: grayscale(.7); }
 .psub { font-family: var(--font-display); font-weight: 600; font-size: .7em; color: var(--ink-soft); }
-.actions { flex: 1; min-height: clamp(88px, calc(var(--vhu) * 16), 132px); overflow-y: auto; -webkit-overflow-scrolling: touch; display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: max-content; gap: 10px; padding: 10px 12px calc(var(--sab) + 12px); align-content: start; }
-.action { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; min-height: clamp(54px, calc(var(--vhu) * 9), 76px); padding: 6px 10px; border-radius: 18px; cursor: pointer;
+.actions { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: max-content; gap: 8px; padding: 8px 10px calc(var(--sab) + 10px); align-content: start; }
+/* when the cards do not all fit, say so: a child will not scroll a box that looks finished */
+.place.more::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 34px; pointer-events: none; z-index: 3;
+  background: linear-gradient(180deg, rgba(255,248,234,0) 0%, var(--paper) 92%); }
+.place.more .actions { scroll-padding-bottom: 34px; }
+.action { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; min-height: clamp(46px, calc(var(--vhu) * 7.5), 76px); padding: 5px 9px; border-radius: 18px; cursor: pointer;
   background: var(--paper-2); border: var(--line) solid var(--ink-line); box-shadow: 0 5px 0 var(--ink-line); transition: transform .08s, box-shadow .08s; position: relative; }
 .action .txt { display: block; flex: 1 1 auto; min-width: 0; }
 .action:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink-line); }
@@ -265,6 +264,15 @@ svg { display: block; }
 .action .why { display: block; font-size: .78em; font-weight: 700; color: var(--berry-dark); margin-top: 1px; line-height: 1.1; }
 .action.disabled .why { color: var(--ink-soft); }
 .action.wide { grid-column: 1 / -1; }
+/* the bed card when there is nothing left to eat: sleeping is the way out, so it says so */
+.action.urge { animation: urge 1.4s ease-in-out infinite; }
+@keyframes urge { 0%, 100% { box-shadow: 0 5px 0 var(--ink-line), 0 0 0 0 rgba(246,196,69,0); } 50% { box-shadow: 0 5px 0 var(--ink-line), 0 0 0 7px rgba(246,196,69,.55); } }
+@media (prefers-reduced-motion: reduce) { .action.urge { animation: none; box-shadow: 0 5px 0 var(--ink-line), 0 0 0 5px rgba(246,196,69,.6); } }
+
+/* "Oops, go back": a mis-tap costs an hour of the day, so time-only actions can be taken back */
+.undobar { display: none; position: absolute; left: 10px; right: 10px; bottom: calc(var(--sab) + 8px); z-index: 4; }
+.undobar.show { display: block; animation: slideup .2s ease-out; }
+.undobar .btn { width: 100%; min-height: 46px; font-size: 1em; background: var(--paper-2); box-shadow: 0 6px 0 var(--ink-line), 0 8px 18px rgba(51,36,26,.28); }
 
 /* chips: time discs + coins */
 .tchips { display: inline-flex; align-items: center; gap: 3px; vertical-align: middle; }
@@ -334,12 +342,8 @@ svg { display: block; }
 .sumsleep { font-size: 1em; text-align: left; justify-content: flex-start; }
 .sumsleep .ft { line-height: 1.25; } .sumsleep .ft b { font-family: var(--font-display); font-weight: 700; }
 .sumsleep.bad { background: #EFE3FF; border-color: #6B4FB3; color: #3C2A78; }
-/* sleepy day: chip in the top bar, 💤 on the avatar, purple discs on the slowed cards, "late" hours on the day bar */
-.sleepychip { background: #EFE3FF; border-color: #6B4FB3; color: #3C2A78; }
 .avatar { position: relative; }
-.avatar.sleepy { background: #EFE3FF; }
-.avatar .zz { position: absolute; right: -.55em; top: -.5em; font-size: .5em; animation: floatz 1.5s ease-in-out infinite; }
-.tchips .slowz { font-size: 12px; line-height: 1; margin-left: 2px; }
+/* the hours after the usual 21:00 bedtime, still playable until midnight */
 .daybar .cells .c.late { background: #D9D1E8; border-color: rgba(51,36,26,.3); }
 
 .night-screen { background: var(--night); }
@@ -360,8 +364,6 @@ svg { display: block; }
 .morning-screen .sunbig { width: clamp(80px, 18vmin, 140px); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #FFF3A6, #FFD23F 60%, #F5A623); box-shadow: 0 0 0 8px rgba(255,220,90,.35), 0 0 40px 14px rgba(255,210,70,.45); animation: sunrise .8s ease-out; }
 @keyframes sunrise { from { transform: translateY(40px) scale(.6); opacity: 0; } }
 .morning-screen .mday { font-family: var(--font-display); font-weight: 700; font-size: clamp(26px, 6vmin, 40px); }
-.morning-screen .mweather { font-family: var(--font-display); font-weight: 600; font-size: 1.3em; display: flex; align-items: center; gap: .4em; }
-.morning-screen .mweather .fe { font-size: 1.8em; }
 
 /* settings */
 .settings .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -394,20 +396,43 @@ svg { display: block; }
   .actions { grid-template-columns: 1fr 1fr 1fr; }
   .tiles { grid-template-columns: repeat(3, 1fr); }
 }
+/* Phones. The scenery is lovely but it is not what a child touches, so on a short screen it gives way
+   to the action cards: everything here shrinks the top of the app and nothing shrinks the card grid. */
 @media (max-height: 720px) and (orientation: portrait) {
-  .sky { height: clamp(96px, 17vh, 140px); }
-  .clockrow { margin-top: calc(-1 * clamp(52px, 9vh, 70px)); padding-top: 4px; padding-bottom: 2px; }
-  .clock { width: clamp(108px, 27vmin, 150px); }
-  .digital .t { font-size: clamp(26px, 5.6vmin, 40px); }
-  .bubble { min-height: 50px; font-size: .95em; padding-top: .35em; padding-bottom: .35em; }
-  .avatar { width: 54px; height: 54px; font-size: 30px; }
-  .meter { padding: 4px 8px; } .meter .segs i { height: 11px; } .wallet { padding: 4px 8px; }
-  .places { padding: 6px 8px; gap: 5px; } .ptile { min-height: 52px; }
-  .action { min-height: 60px; }
+  .sky { height: clamp(56px, 11vh, 110px); }
+  .clockrow { margin-top: calc(-1 * clamp(40px, 7.5vh, 70px)); padding-top: 2px; padding-bottom: 0; }
+  .clock { width: clamp(84px, 22vmin, 140px); }
+  .digital { padding: .2em .6em .25em; }
+  .digital .t { font-size: clamp(24px, 5.2vmin, 38px); }
+  .digital .p { font-size: .8em; }
+  .daybar { padding: 4px 10px 2px; }
+  .bubble { min-height: 46px; font-size: .95em; padding-top: .3em; padding-bottom: .3em; }
+  .avatar { width: 50px; height: 50px; font-size: 28px; }
+  .meter { padding: 3px 8px; } .meter .segs i { height: 10px; } .wallet { padding: 3px 8px; }
+  .places { padding: 5px 8px; gap: 5px; } .ptile { min-height: 48px; }
   .wishbox { padding: 3px 10px; } .wishbox .wname { display: none; } .wishbox .wemoji { font-size: 1.3em; } .wishbox .bar { margin-top: 0; height: 10px; }
-  .action { min-height: 64px; padding: 6px 8px; }
-  .action .ae { font-size: 28px; }
-  .body { gap: 6px; }
+  .action { min-height: 56px; padding: 5px 8px; }
+  .action .ae { font-size: 26px; }
+  .action .al { font-size: 1em; }
+  .body { gap: 5px; }
+}
+/* Really short screens (iPhone SE and friends): keep going, the cards still come first. */
+@media (max-height: 600px) and (orientation: portrait) {
+  .sky { height: clamp(36px, 7vh, 70px); }
+  .clock { width: clamp(66px, 17vmin, 110px); }
+  .clockrow { margin-top: calc(-1 * clamp(26px, 5.5vh, 52px)); gap: 10px; }
+  .digital .p { display: none; }
+  .digital .t { font-size: clamp(22px, 4.8vmin, 32px); }
+  .daybar .labels { display: none; }
+  .daybar { padding: 3px 10px 0; }
+  .avatar { width: 42px; height: 42px; font-size: 23px; }
+  .bubble { min-height: 40px; font-size: .88em; }
+  .meters { gap: 4px; } .meter { padding: 2px 6px; } .meter .segs i { height: 9px; }
+  .places { padding: 4px 6px; } .ptile { min-height: 42px; } .ptile .pe { font-size: 1.5em; }
+  .actions { gap: 6px; padding: 6px 8px calc(var(--sab) + 8px); }
+  .action { min-height: 48px; padding: 4px 7px; }
+  .action .ae { font-size: 23px; }
+  .action .al { font-size: .95em; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01s !important; animation-iteration-count: 1 !important; transition-duration: .15s !important; }

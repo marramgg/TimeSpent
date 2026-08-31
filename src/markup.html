@@ -25,8 +25,6 @@
   <main id="game" class="screen game">
     <header class="topbar">
       <div class="daylabel"><span class="n" id="dayN"></span><span class="wd" id="weekday"></span><span class="wk hidden" id="wkBadge"></span></div>
-      <div class="weatherchip" id="weatherChip"><span class="we"></span><span class="wt"></span></div>
-      <div class="weatherchip sleepychip hidden" id="sleepyChip"><span class="we">🥱</span><span class="wt st"></span></div>
       <button class="gear" id="gear" aria-label="Grown-ups"><span class="ring"></span>⚙️</button>
     </header>
 
@@ -39,8 +37,6 @@
           <div class="stars"></div>
           <div class="cloud c1"><i></i><i></i><i></i></div>
           <div class="cloud c2"><i></i><i></i><i></i></div>
-          <div class="rain-layer"></div>
-          <div class="snow-layer"></div>
           <div class="moon" id="moon"></div>
           <div class="sun" id="sun"></div>
           <svg class="hills" viewBox="0 0 400 60" preserveAspectRatio="none" aria-hidden="true">
@@ -58,7 +54,7 @@
       <section class="status">
         <div class="buddy">
           <div class="avatar" id="avatar">🐻</div>
-          <div class="bubble"><p id="bubbleText"></p><button class="speak on" id="speakBtn" aria-label="Read aloud">🔊</button></div>
+          <div class="bubble" id="bubbleBox" role="button" tabindex="0"><p id="bubbleText"></p><span class="more hidden" id="bubbleMore">▸</span><button class="speak on" id="speakBtn" aria-label="Read aloud">🔊</button></div>
         </div>
         <div class="meters">
           <div class="meter tummy" id="mTummy"><div class="lab">🍎 <span data-i18n="tummy"></span><span class="pvd hidden"></span></div><div class="segs"></div></div>
@@ -71,6 +67,7 @@
 
       <section class="place">
         <div class="places" id="places"></div>
+        <div class="undobar" id="undoBar"><button class="btn secondary" id="btnUndo"></button></div>
         <div class="actions" id="actions"></div>
       </section>
     </div>
@@ -111,7 +108,6 @@
       </div>
       <div class="walletline"><span data-i18n="summary.wallet"></span> <span class="coin lg"></span> <span id="sumWallet"></span></div>
       <div class="forecast sumsleep" id="sumSleep"><span class="fe"></span><span class="ft"></span></div>
-      <div class="forecast hidden" id="sumForecast"><span class="fe"></span><span class="ft"></span></div>
       <div class="big-row"><button class="btn big sky" id="btnSleep"></button></div>
     </div>
   </div>
@@ -135,7 +131,6 @@
       <div class="sunbig"></div>
       <h2 data-i18n="morning"></h2>
       <div class="mday" id="mDay"></div>
-      <div class="mweather" id="mWeather"><span class="fe"></span><span class="ft"></span></div>
       <p id="mText" style="margin:0;font-weight:700"></p>
       <button class="btn big leaf" id="btnWake"></button>
     </div>

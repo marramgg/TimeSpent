@@ -44,8 +44,17 @@ Never commit tokens or credentials. The only credential is Marcos's GitHub token
 
 ## Engineering notes
 
-- Design for iPhone 13 (390×664 viewport); `test/ui-play.js` and `test/shots.js` emulate it.
+- Design for iPhone 13 (390×664 viewport); `test/ui-play.js` and `test/shots.js` emulate it. Set `TS_CHROMIUM`
+  to a chromium binary if you have one already installed instead of running `npx playwright install`.
+- **The player is five and may not read.** Every card must say what it does out loud when pressed (`sayAction` in
+  ui.js); a card carries at most two chips (how long, and the one thing it changes most); one bubble message is on
+  screen at a time; the action grid gets the leftover screen space, never the scenery. Check a change at 390×664
+  before shipping it: no card should sit entirely below the fold.
 - Grids with wrapping tiles need `grid-auto-rows: max-content`; action tiles are `div[role=button]`.
 - The shop sheet closes after each purchase. Save key: `timespent.save.v1`.
-- Balance knobs are at the top of `engine.js` (`WORK_PAY`, `ITEMS`, `STALL_UNLOCK`, `WEATHER_FROM`, opening hours).
-- Everything is read aloud and bilingual: every new string goes in `i18n.js` in both EN and PT-PT.
+- Balance knobs are at the top of `engine.js` (`WORK_PAY`, `ITEMS`, `STALL_UNLOCK`, `PLACES[*].unlockDay`, opening
+  hours). One new thing opens per day — keep day 1 to home + bakery + walking.
+- Everything is read aloud and bilingual: every new string goes in `i18n.js` in both EN and PT-PT, and bubble lines
+  stay under about ten words.
+- Sleep debt, weather and the late-for-work fine were deliberately removed (see the end of `GAME-DESIGN.md`).
+  Don't add them back without a reason that is worth the extra thing for a five-year-old to hold in mind.
