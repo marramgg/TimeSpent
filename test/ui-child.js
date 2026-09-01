@@ -81,13 +81,21 @@ async function startRoutes(browser) {
   // no action card may sit entirely below the fold on a 390x664 phone
   const fits = async (where) => {
     const bad = await page.evaluate(() => {
-      const box = document.getElementById('actions').getBoundingClientRect();
-      return [...document.querySelectorAll('#actions .action')].filter(el => el.getBoundingClientRect().top >= Math.min(box.bottom, innerHeight)).length;
+      const box = document.querySelector('.place').getBoundingClientRect();
+      const cards = [...document.querySelectorAll('#actions .action'), ...document.querySelectorAll('.qbtn')];
+      const below = cards.filter(el => el.getBoundingClientRect().top >= Math.min(box.bottom, innerHeight)).length;
+      // "Oops, go back" floats: it must never sit on top of an answer button
+      const undo = document.getElementById('undoBar');
+      const ub = undo.classList.contains('show') ? undo.getBoundingClientRect() : null;
+      const covered = !ub ? 0 : [...document.querySelectorAll('.qbtn')].filter(el => el.getBoundingClientRect().bottom > ub.top).length;
+      return { below, covered };
     });
-    if (bad) fail(`${bad} card(s) below the fold ${where}`);
+    if (bad.below) fail(`${bad.below} card(s) below the fold ${where}`);
+    if (bad.covered) fail(`the undo bar covers ${bad.covered} answer button(s) ${where}`);
   };
 
-  const days = [], shot = {};
+  const days = [], shot = {}, seen = new Set();
+  let refused = false; // say no to washing hands exactly once, to see the poo and the price
   for (let guard = 0; guard < 500; guard++) {
     await idle();
     const s = await st();
@@ -101,29 +109,51 @@ async function startRoutes(browser) {
       await page.click('#btnWake'); await page.waitForTimeout(300);
       continue;
     }
-    const a = await acts();
-    const first = (...ids) => ids.find(id => a.includes(id));
-    if (s.loc === 'home' && s.day === 1 && s.time === E.CHILD.wakeEarly) { await fits('in the morning'); await page.screenshot({ path: `${out}/child-morning.png` }); }
-    if (s.loc === 'school') {
-      if (a.includes('school')) { if (!shot.school) { shot.school = true; await fits('at school'); await page.screenshot({ path: `${out}/child-school.png` }); } await act('school'); }
-      else await go('home');
-      continue;
-    }
-    if (s.loc !== 'home') { await go('home'); continue; }
-    if (s.time < E.CHILD.lunchAt) {
-      const morning = first('breakfast', 'teethAM', 'dress');
-      if (morning) { await act(morning); continue; }
-      if (!E.isWeekend(s.day)) {
-        if (s.time + E.CHILD.walk >= E.CHILD.schoolIn - 15) await go('school'); else await act('playHome');
+
+    // the day asks: answer it, and nothing else is on screen while it does
+    const q = await page.evaluate(() => { const x = TS.engine.question(TS.state); return x && { id: x.id, tier: x.tier, yes: x.yes, no: x.no }; });
+    if (q) {
+      seen.add(q.id);
+      const shown = await page.evaluate(() => ({
+        panel: !document.getElementById('question').classList.contains('hidden'),
+        grid: !document.getElementById('actions').classList.contains('hidden'),
+        yes: document.querySelector('.qbtn.yes .qi').textContent,
+        no: document.querySelector('.qbtn.no .qi').textContent,
+        tier: document.getElementById('qTier').textContent,
+        asked: document.getElementById('qText').textContent,
+      }));
+      if (!shown.panel || shown.grid) fail(`${q.id}: the question should replace the cards, got ${JSON.stringify(shown)}`);
+      if (shown.yes !== q.yes || shown.no !== q.no) fail(`${q.id}: wrong answer icons ${JSON.stringify(shown)}`);
+      if (!shown.tier || !shown.asked.trim().endsWith('?')) fail(`${q.id}: the question is not being asked out loud ${JSON.stringify(shown)}`);
+      if (!shot[q.id]) { shot[q.id] = true; await fits(`asking about ${q.id}`); }
+      if (q.id === 'wash' && !refused) { // the one "no" of the week
+        refused = true;
+        if (shown.no !== '\u{1F4A9}') fail('washing hands should offer a poo for no, got ' + shown.no);
+        const before = s.tummy;
+        await page.screenshot({ path: `${out}/child-question-wash.png` });
+        await page.click('.qbtn.no'); await idle(); await page.waitForTimeout(400);
+        const after = await st();
+        if (after.tummy >= before) fail(`saying no to washing should cost health: ${before} -> ${after.tummy}`);
+        if (after.time !== s.time) fail('saying no should cost no time');
         continue;
       }
+      if (q.id === 'breakfast' && !shot.breakfastShot) { shot.breakfastShot = true; await page.screenshot({ path: `${out}/child-question-breakfast.png` }); }
+      await page.click('.qbtn.yes'); await idle(); await page.waitForTimeout(200);
+      continue;
     }
-    if (s.time >= 18 * 60 && s.day === 2 && !shot.evening) { shot.evening = true; await fits('in the evening'); await page.screenshot({ path: `${out}/child-evening.png` }); }
-    const evening = first('wash', 'tidy', 'lunch', 'dinner', 'bath', 'teethPM');
-    if (evening) { await act(evening); continue; }
-    if (a.includes('bed') && s.time >= E.CHILD.goodBed) { await act('bed'); continue; }
+
+    // free time: the cards are back
+    const a = await acts();
+    if (s.loc === 'school') { if (a.includes('school')) { if (!shot.school) { shot.school = true; await fits('at school'); await page.screenshot({ path: `${out}/child-school.png` }); } await act('school'); } else await go('home'); continue; }
+    if (s.loc !== 'home') { await go('home'); continue; }
+    if (!shot.free) { shot.free = true; await fits('in free time'); await page.screenshot({ path: `${out}/child-free.png` }); }
+    if (!E.isWeekend(s.day) && s.time < E.CHILD.lunchAt) {
+      if (s.time + E.CHILD.walk >= E.CHILD.schoolIn - 15) await go('school'); else await act('playHome');
+      continue;
+    }
     await act('playHome');
   }
+
 
   const final = await st();
   console.log('final', JSON.stringify(final));
@@ -131,19 +161,34 @@ async function startRoutes(browser) {
   if (final.day <= 5) fail('the school week never finished');
   if (final.tummy < 3 || final.happy < 3) fail('a child who keeps the routine should end the week well');
 
-  // the bed card must say which morning it buys, out loud
+  const everyQuestion = ['breakfast', 'dress', 'teethAM', 'wash', 'tidy', 'dinner', 'bath', 'teethPM', 'bed'];
+  const missed = everyQuestion.filter(id => !seen.has(id));
+  if (missed.length) fail('these questions were never asked in a school week: ' + missed);
+  if (!refused) fail('the "no" path was never taken');
+  const coinsShown = await page.evaluate(() => {
+    const w = document.getElementById('wallet');
+    return { wallet: getComputedStyle(w).display !== 'none', wish: !document.getElementById('wishbox').classList.contains('hidden') };
+  });
+  if (coinsShown.wallet || coinsShown.wish) fail('a child’s day should show no coins: ' + JSON.stringify(coinsShown));
+
+  // the bed question must say which morning it buys, out loud
   const bed = await page.evaluate(() => {
-    TS.state.time = TS.engine.CHILD.goodBed; TS.render();
-    const el = [...document.querySelectorAll('#actions .action')].find(x => x.dataset.act === 'bed');
+    const s = TS.state;
+    s.time = TS.engine.CHILD.goodBed;
+    Object.keys(TS.engine.CHORE).forEach(k => { s.chores[k] = 1; });
+    delete s.skipped.bed; TS.render();
+    const yes = document.querySelector('.qbtn.yes'), no = document.querySelector('.qbtn.no');
     const said = []; const real = speechSynthesis.speak.bind(speechSynthesis);
     speechSynthesis.speak = (u) => said.push(u.text); TS.settings.voice = true;
-    el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    yes.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    no.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
     TS.settings.voice = false; speechSynthesis.speak = real;
-    return { chip: el.querySelector('.cchip').textContent.trim(), said: said[0] || '' };
+    return { yes: yes.querySelector('.qc').textContent.trim(), no: no.querySelector('.qc').textContent.trim(), said };
   });
-  console.log('bed card', JSON.stringify(bed));
-  if (!/7/.test(bed.chip)) fail('the bed card does not show the wake-up time');
-  if (!bed.said || bed.said.length < 4) fail('the bed card did not speak');
+  console.log('bed question', JSON.stringify(bed));
+  if (!/7:00/.test(bed.yes)) fail('the bed question does not show the early morning it buys: ' + bed.yes);
+  if (!/7:30/.test(bed.no)) fail('staying up does not show the late morning it costs: ' + bed.no);
+  if (bed.said.length !== 2 || bed.said.some(x => x.length < 4)) fail('both answers should speak: ' + JSON.stringify(bed.said));
 
   console.log(errors.length ? errors : 'no page errors');
   if (errors.length) process.exit(1);

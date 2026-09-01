@@ -5,12 +5,13 @@ function assert(c, msg, s) { if (!c) { console.error('ASSERT FAIL:', msg, JSON.s
 
 function step(s, pick, rnd) {
   // returns true if the day ended
-  const acts = E.actions(s);
-  assert(acts.some(a => a.enabled), 'no enabled action', s);
+  const acts = E.actions(s), q = E.question(s);
+  assert(acts.some(a => a.enabled) || q, 'nothing to press and nothing asked', s);
   const enabled = acts.filter(a => a.enabled);
-  const choice = pick(s, enabled, rnd);
+  const choice = pick(s, enabled, rnd, q);
   let out;
-  if (choice.type === 'act') out = E.perform(s, choice.id);
+  if (choice.type === 'answer') out = E.answer(s, choice.id, choice.yes);
+  else if (choice.type === 'act') out = E.perform(s, choice.id);
   else if (choice.type === 'travel') out = E.travel(s, choice.dest, choice.mode);
   else if (choice.type === 'buy') out = E.buy(s, choice.item);
   else if (choice.type === 'wish') out = E.setWish(s, choice.item);
@@ -19,7 +20,9 @@ function step(s, pick, rnd) {
   return s.phase !== 'day';
 }
 
-function randomPolicy(s, enabled, rnd) {
+function randomPolicy(s, enabled, rnd, q) {
+  // a question must be answered before anything else can happen, so answer it — either way, at random
+  if (q) return { type: 'answer', id: q.id, yes: q.tier === 'must' || rnd() < 0.7 };
   const r = rnd();
   if (r < 0.25) { const dests = E.destinations(s).filter(d => !d.here); const d = dests[Math.floor(rnd() * dests.length)];
     const opts = E.travelOptions(s).filter(o => o.enabled); return { type: 'travel', dest: d.id, mode: opts[Math.floor(rnd() * opts.length)].mode }; }
@@ -69,19 +72,13 @@ function sensiblePolicy(s, enabled) {
 }
 
 // A child who does the routine: eat, teeth, dressed, leave in time for the bell, then whatever the evening asks for.
-function childPolicy(s, enabled) {
+function childPolicy(s, enabled, rnd, q) {
   const has = id => enabled.find(a => a.id === id);
   const act = id => ({ type: 'act', id }), go = d => ({ type: 'travel', dest: d, mode: 'walk' });
-  if (s.loc === 'home' && s.time < E.CHILD.lunchAt) {
-    if (has('breakfast')) return act('breakfast');
-    if (has('teethAM')) return act('teethAM');
-    if (has('dress')) return act('dress');
-    if (!E.isWeekend(s.day)) return s.time + E.CHILD.walk >= E.CHILD.schoolIn - 15 ? go('school') : act('playHome');
-  }
+  if (q) return { type: 'answer', id: q.id, yes: true };   // a child who says yes to the whole routine
   if (s.loc === 'school') return has('school') ? act('school') : go('home');
   if (s.loc !== 'home') return go('home');
-  for (const id of ['wash', 'tidy', 'lunch', 'dinner', 'bath', 'teethPM']) if (has(id)) return act(id);
-  if (has('bed') && s.time >= E.CHILD.goodBed) return act('bed');
+  if (!E.isWeekend(s.day) && s.time < E.CHILD.lunchAt) return s.time + E.CHILD.walk >= E.CHILD.schoolIn - 15 ? go('school') : act('playHome');
   return act('playHome');
 }
 
@@ -268,38 +265,83 @@ console.log('--- work pays the same whenever you turn up');
   assert(w.earn === 2 && w.minutes === 120, 'two hours late: 2 hours, 2 coins, nothing extra taken', w);
 }
 console.log('ok');
+// every question of the day already answered, so a test can start wherever it likes
+const ALL_DONE = Object.keys(E.CHORE).reduce((o, k) => (o[k] = 1, o), {});
+
 console.log('--- child mode: random policy, 30 seeds x 14 days');
 for (let seed = 1; seed <= 30; seed++) runDays(randomPolicy, 14, seed, false, 'child');
 console.log('ok');
 
-console.log('--- child mode: doing the routine keeps a child well and happy');
+console.log('--- child mode: saying yes to the whole routine keeps a child well and happy');
 {
   const c = runDays(childPolicy, 14, 5, false, 'child');
   assert(c.tummy >= 3 && c.happy >= 3, 'a child who keeps the routine should be well', c);
-  assert(c.coins >= 14, 'pocket money adds up', c);
+  assert(c.coins === 2, 'a child earns and spends nothing: the coins never move', c.coins);
 }
 
-console.log('--- child mode: day 1 is home and school, and five cards');
+console.log('--- child mode: no coins, and nowhere to spend them');
+{
+  const c = E.newGame('\u{1F43B}', 3, 'child'); c.day = 8; // every place is unlocked by now
+  assert(!E.destinations(c).some(p => p.id === 'shops'), 'no shops in a child’s day', E.destinations(c));
+  for (const loc of ['home', 'school', 'park']) {
+    const at = E.newGame('\u{1F43B}', 3, 'child'); at.day = 8; at.loc = loc; at.chores = ALL_DONE; at.time = 13 * 60;
+    const paid = E.actions(at).filter(a => a.cost || a.earn);
+    assert(paid.length === 0, 'nothing at ' + loc + ' costs or earns coins', paid);
+  }
+}
+
+console.log('--- child mode: the day asks, one question at a time');
 {
   const d1 = E.newGame('\u{1F43B}', 3, 'child');
   assert(E.destinations(d1).map(p => p.id).join(',') === 'home,school', 'day 1 is home and school', E.destinations(d1));
-  assert(E.travelOptions(d1).map(o => o.mode).join(',') === 'walk', 'a child walks', E.travelOptions(d1));
-  const ids = E.actions(d1).map(a => a.id);
-  assert(ids.join(',') === 'breakfast,dress,teethAM,playHome', 'the morning has four cards', ids);
-  const ev = E.newGame('\u{1F43B}', 3, 'child'); ev.time = E.CHILD.bedFrom;
-  assert(E.actions(ev).some(a => a.id === 'bed'), 'and the bed card comes out in the evening', E.actions(ev).map(a => a.id));
-  assert(!E.foodTrapped(d1), 'a child is never trapped without food', d1);
+  assert(E.actions(d1).length === 0, 'no cards while a question is waiting', E.actions(d1));
+  const q = E.question(d1);
+  assert(q && q.id === 'breakfast' && q.yes === '\u{1F963}' && q.no === '\u{1F62B}', 'breakfast is asked first, with both icons', q);
+  // answering opens the next question, and only the routine is asked
+  assert(E.answer(d1, 'breakfast', true).ok, 'yes is an answer', d1);
+  assert(E.question(d1).id === 'dress', 'then getting dressed', E.question(d1));
+  assert(E.answer(d1, 'teethAM', true).ok === false, 'only the question being asked can be answered', d1);
+}
+
+console.log('--- child mode: what you have to do, and what only costs health');
+{
+  // "must" cannot be refused: the question stays and nothing moves
+  const m = E.newGame('\u{1F43B}', 3, 'child');
+  E.answer(m, 'breakfast', true);
+  const q = E.question(m); assert(q.id === 'dress' && q.tier === 'must', 'getting dressed is a must', q);
+  const t0 = m.time, h0 = m.tummy;
+  const no = E.answer(m, 'dress', false);
+  assert(!no.ok && no.msgs[0].key === 'mustDress', 'no is refused, with the reason', no.msgs);
+  assert(m.time === t0 && m.tummy === h0, 'and refusing a must costs nothing', m);
+  assert(E.question(m).id === 'dress', 'the question stays until it is done', E.question(m));
+
+  // "should" can be refused: it costs a meter, right there, and no time at all
+  const w = E.newGame('\u{1F43B}', 3, 'child'); w.time = 18 * 60; w.chores = { breakfast: 1, dress: 1, teethAM: 1 };
+  const wq = E.question(w); assert(wq.id === 'wash' && wq.tier === 'should' && wq.no === '\u{1F4A9}', 'washing hands asks with a poo', wq);
+  const wt = w.time, wh = w.tummy;
+  assert(E.answer(w, 'wash', false).ok, 'no is allowed', w);
+  assert(w.tummy === wh - 1, 'and costs health', { was: wh, now: w.tummy });
+  assert(w.time === wt, 'but no time — which is exactly why it is tempting', w);
+  assert(E.choreSkipped(w, 'wash'), 'the answer is remembered', w.skipped);
+  assert(E.question(w).id === 'tidy', 'and the day moves on to the next question', E.question(w));
 }
 
 console.log('--- child mode: last night decides this morning');
 {
-  const onTime = E.newGame('\u{1F43B}', 3, 'child'); onTime.time = E.CHILD.goodBed;
-  E.perform(onTime, 'bed'); E.goToSleep(onTime); E.wakeUp(onTime);
+  const onTime = E.newGame('\u{1F43B}', 3, 'child'); onTime.time = E.CHILD.goodBed; onTime.chores = ALL_DONE;
+  assert(E.question(onTime).id === 'bed', 'bedtime is asked', E.question(onTime));
+  E.answer(onTime, 'bed', true); E.goToSleep(onTime); E.wakeUp(onTime);
   assert(onTime.wake === E.CHILD.wakeEarly, 'bed by 20:30 wakes at 7:00', onTime.wake);
-  const late = E.newGame('\u{1F43B}', 3, 'child'); late.time = E.CHILD.goodBed + 15;
-  E.perform(late, 'bed'); E.goToSleep(late); E.wakeUp(late);
-  assert(late.wake === E.CHILD.wakeLate, 'a later bed wakes at 7:30', late.wake);
-  // 20:30 to 7:00 and 21:00 to 7:30 are the same ten and a half hours: what a late bed costs is the morning, not the sleep
+
+  const late = E.newGame('\u{1F43B}', 3, 'child'); late.time = E.CHILD.goodBed; late.chores = ALL_DONE;
+  assert(E.answer(late, 'bed', false).ok, 'staying up is allowed', late);
+  assert(!E.question(late), 'and is not asked again', E.question(late));
+  let guard = 0; while (late.phase === 'day' && guard++ < 20) E.perform(late, 'playHome');
+  assert(late.bedAt === E.CHILD.latestBed, 'the day ends itself at 9', late.bedAt);
+  E.goToSleep(late); E.wakeUp(late);
+  assert(late.wake === E.CHILD.wakeLate, 'and tomorrow starts half an hour late', late.wake);
+
+  // 20:30 to 7:00 and 21:00 to 7:30 are the same ten and a half hours: a late bed costs the morning, not the sleep
   const a = E.nightMath(onTime, E.CHILD.goodBed).slept, b = E.nightMath(late, 21 * 60).slept;
   assert(a === b, 'same night, later morning', { a, b });
 }
@@ -308,39 +350,46 @@ console.log('--- child mode: waking early buys play time, waking late does not')
 {
   const play = (wake) => {
     const s = E.newGame('\u{1F43B}', 3, 'child'); s.wake = wake; s.time = wake;
+    for (const id of ['breakfast', 'dress', 'teethAM']) assert(E.answer(s, id, true).ok, 'the routine should answer', id);
     let n = 0;
-    for (const id of ['breakfast', 'dress', 'teethAM']) assert(E.perform(s, id).ok, 'routine card should work', id);
-    while (s.time + E.CHILD.walk < E.CHILD.schoolIn) { assert(E.perform(s, 'playHome').ok, 'play should work', s); n++; } // stop while there is still time to walk
+    while (s.time + E.CHILD.walk < E.CHILD.schoolIn) { assert(E.perform(s, 'playHome').ok, 'play should work', s); n++; }
     return n;
   };
   const early = play(E.CHILD.wakeEarly), late = play(E.CHILD.wakeLate);
   assert(early === 2 && late === 0, 'up at 7:00 buys two plays, up at 7:30 buys none', { early, late });
 }
 
-console.log('--- child mode: the routine has consequences, and they are said out loud');
+console.log('--- child mode: skipping the routine buys the same time back');
 {
   const s = E.newGame('\u{1F43B}', 3, 'child');
-  assert(!E.travel(s, 'school', 'walk').ok, 'cannot leave undressed', s);
-  assert(E.travel(s, 'school', 'walk').msgs[0].key === 'notDressed', 'and the game says why', s);
-  assert(E.perform(s, 'dress').ok, 'get dressed', s);
-  const health = s.tummy, out = E.travel(s, 'school', 'walk');
-  assert(out.ok && s.loc === 'school', 'now we can go', s);
-  assert(out.msgs.some(m => m.key === 'noBreakfast') && out.msgs.some(m => m.key === 'noTeeth'), 'skipping is named', out.msgs);
-  assert(s.tummy === health - 3, 'no breakfast and no teeth cost health', { health, now: s.tummy });
+  E.answer(s, 'breakfast', false); E.answer(s, 'dress', true); E.answer(s, 'teethAM', false);
+  assert(s.time === E.CHILD.wakeEarly + 15, 'only getting dressed took any time', s.time);
+  assert(s.tummy === 3 - 2 - 1 && s.happy === 3 - 1, 'and both skips were paid for at once', { h: s.tummy, j: s.happy });
+}
 
-  const late = E.newGame('\u{1F43B}', 3, 'child'); late.time = E.CHILD.schoolIn; late.chores = { dress: true, breakfast: true, teethAM: true };
+console.log('--- child mode: the school gate only judges the clock now');
+{
+  const late = E.newGame('\u{1F43B}', 3, 'child'); late.time = E.CHILD.schoolIn; late.chores = ALL_DONE; late.skipped = { bed: 1 };
   assert(E.travel(late, 'school', 'walk').msgs.some(m => m.key === 'lateSchool'), 'leaving at the bell is late', late);
+  const early = E.newGame('\u{1F43B}', 3, 'child'); early.chores = ALL_DONE; early.skipped = { bed: 1 };
+  assert(E.travel(early, 'school', 'walk').msgs.some(m => m.key === 'playedOnWay'), 'leaving early buys a play on the way', early);
+}
 
-  const hands = E.newGame('\u{1F43B}', 3, 'child'); hands.time = E.CHILD.dinnerFrom;
-  assert(E.perform(hands, 'dinner').msgs.some(m => m.key === 'dirtyHands'), 'dinner with dirty hands is named', hands);
+console.log('--- child mode: a question holds everything else still');
+{
+  const s = E.newGame('\u{1F43B}', 3, 'child');
+  assert(!E.travel(s, 'school', 'walk').ok, 'you cannot leave mid-question', s);
+  assert(E.travel(s, 'school', 'walk').msgs[0].key === 'answerFirst', 'and the game says why', s);
+  assert(!E.perform(s, 'playHome').ok, 'nor play', s);
 }
 
 console.log('--- child mode: a bath every second day');
 {
-  const evening = (day) => { const s = E.newGame('\u{1F43B}', 3, 'child'); s.day = day; s.time = E.CHILD.dinnerFrom; E.perform(s, 'dinner'); return E.actions(s).map(a => a.id); };
-  assert(evening(2).includes('bath'), 'day 2 has a bath', evening(2));
-  assert(!evening(3).includes('bath'), 'day 3 has none', evening(3));
+  const evening = (day) => { const s = E.newGame('\u{1F43B}', 3, 'child'); s.day = day; s.time = E.CHILD.dinnerFrom; s.chores = { breakfast: 1, dress: 1, teethAM: 1, wash: 1, tidy: 1 }; E.answer(s, 'dinner', true); const q = E.question(s); return q && q.id; };
+  assert(evening(2) === 'bath', 'day 2 asks about a bath', evening(2));
+  assert(evening(3) === 'teethPM', 'day 3 goes straight to teeth', evening(3));
 }
+
 
 console.log('--- strings: EN and PT complete, and nothing the game says is missing');
 { // everything is read aloud in two languages, so a missing string is a silent button
@@ -372,6 +421,14 @@ console.log('--- strings: EN and PT complete, and nothing the game says is missi
   assert(badPlaces.length === 0, 'places with no text', badPlaces);
   const badChores = Object.values(E.CHORE).filter(c => !I18N.en.bubble[c.msg] || !I18N.pt.bubble[c.msg]);
   assert(badChores.length === 0, 'routine cards with no spoken line', badChores);
+  // every question needs its words, and every "no" needs to say what it costs — in both languages
+  const asked = Object.keys(E.CHORE).concat(['bed']);
+  const badQ = asked.filter(id => !I18N.en.q[id] || !I18N.pt.q[id]);
+  assert(badQ.length === 0, 'questions with no text', badQ);
+  const badNo = Object.entries(E.CHORE).filter(([, c]) => !c.no || !I18N.en.bubble[c.skipMsg] || !I18N.pt.bubble[c.skipMsg]);
+  assert(badNo.length === 0, 'answers of "no" with no icon or no consequence', badNo.map(x => x[0]));
+  const badTier = [...new Set(Object.values(E.CHORE).map(c => c.tier).concat(['choice']))].filter(t => !I18N.en.tier[t] || !I18N.pt.tier[t]);
+  assert(badTier.length === 0, 'question kinds with no label', badTier);
   const badBands = [...bands].filter(b => !I18N.en.plan[b] || !I18N.pt.plan[b] || !I18N.en.bubble.plan[b] || !I18N.pt.bubble.plan[b]);
   assert(badBands.length === 0, 'plan bands with no text', badBands);
   const badActs = [...ids].filter(i => !I18N.en.act[i] || !I18N.pt.act[i]);

@@ -64,9 +64,9 @@
     const norm = (v) => (v.lang || '').replace('_', '-').toLowerCase();
     return voices.find(v => norm(v) === want) || voices.find(v => norm(v).startsWith(pre)) || null;
   }
-  function speak(text) {
+  function speak(text, opts) {
     if (!settings.voice || !window.speechSynthesis || !text) return;
-    try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = L().speechLang; const v = pickVoice(); if (v) u.voice = v; u.rate = 0.95; u.pitch = 1.05; speechSynthesis.speak(u); } catch (e) {}
+    try { if (!(opts && opts.queue)) speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = L().speechLang; const v = pickVoice(); if (v) u.voice = v; u.rate = 0.95; u.pitch = 1.05; speechSynthesis.speak(u); } catch (e) {}
   }
 
   // ---------- formatting helpers ----------
@@ -130,6 +130,19 @@
     else if (net < 0) parts.push(fmt(Lx.say.costs, { n: Lx.coinsN(-net) }));
     return parts.join(' ');
   }
+  // Holding an answer tells you what it does — including, on "no", exactly what it costs. That is the point of asking.
+  function sayAnswer(q, yes) {
+    const Lx = L(), parts = [(yes ? Lx.qYes : Lx.qNo) + '.'];
+    if (yes) {
+      if (q.minutes) parts.push(fmt(Lx.say.dur, { d: Lx.time.sayDur(q.minutes) }));
+      if (q.id === 'bed') parts.push(fmt(Lx.say.wakeAt, { t: sayTime(q.wake) }));
+    } else parts.push(msgText(q.id === 'bed' ? { key: 'stayedUp', t: E.CHILD.wakeLate } : { key: E.CHORE[q.id].skipMsg }));
+    return parts.join(' ');
+  }
+  const answerEffect = (q, yes) => yes
+    ? { minutes: q.minutes, cat: E.CHORE[q.id] ? (E.CHORE[q.id].cat || 'wait') : 'sleep', tummy: q.tummy, happy: q.happy, enabled: true }
+    : { minutes: 0, cat: 'wait', tummy: -q.skipTummy, happy: -q.skipHappy, enabled: true };
+
   function sayMode(o) {
     const Lx = L(), parts = [Lx.travel[o.mode] + '.'];
     parts.push(fmt(Lx.say.dur, { d: Lx.time.sayDur(o.minutes) }));
@@ -278,7 +291,8 @@
   function renderMeters(pv) {
     const child = E.isChild(S);
     $('tummyIco').textContent = child ? '❤️' : '🍎'; $('tummyLab').textContent = t(child ? 'health' : 'tummy');
-    $('game').querySelector('.meters').classList.toggle('nofridge', child);
+    const meters = $('game').querySelector('.meters');
+    meters.classList.toggle('nofridge', child); meters.classList.toggle('nocoins', child);
     const dT = pv ? (pv.tummy || 0) - (pv.minutes || 0) * (E.hungerOf(S) / E.stepOf(S)) : 0;
     const dH = pv ? (pv.happy || 0) : 0, dF = pv ? (pv.fridge || 0) : 0;
     const cT = Math.ceil(S.tummy), aT = Math.ceil(clampv(S.tummy + dT, 0, E.TUMMY_MAX));
@@ -314,7 +328,7 @@
     }
   }
   function renderWish() {
-    const box = $('wishbox'); if (!S.wish) { box.classList.add('hidden'); return; }
+    const box = $('wishbox'); if (!S.wish || E.isChild(S)) { box.classList.add('hidden'); return; }
     const it = E.ITEMS[S.wish]; const have = Math.min(S.coins, it.price);
     box.classList.remove('hidden'); box.querySelector('.wemoji').textContent = it.emoji; box.querySelector('.wname').textContent = t('wish') + ': ' + t('items.' + S.wish);
     box.querySelector('.bar i').style.width = (100 * have / it.price) + '%'; box.querySelector('.wnum').textContent = `${S.coins} / ${it.price}`;
@@ -326,9 +340,40 @@
     $('nightAvatar').textContent = S.avatar;
   }
   let shownLoc = null;
+  let lastQuestion = null;
   function renderPlace() {
     if (shownLoc !== S.loc) { $('actions').scrollTop = 0; shownLoc = S.loc; }
-    renderPlaces(); renderActions();
+    renderPlaces(); renderQuestion(); renderActions();
+  }
+  // While the day is asking, the two answers take the whole grid: one thing on screen, and both buttons say what they do.
+  function renderQuestion() {
+    const q = E.isChild(S) ? E.question(S) : null;
+    lastQuestion = q;
+    const box = $('question');
+    box.classList.toggle('hidden', !q);
+    $('actions').classList.toggle('hidden', !!q);
+    $('game').querySelector('.place').classList.toggle('asking', !!q);
+    if (!q) return;
+    const Lx = L();
+    box.classList.toggle('must', q.tier === 'must');
+    $('qTier').textContent = Lx.tier[q.tier];
+    $('qText').textContent = Lx.q[q.id];
+    const fill = (sel, ico, label, chips, min) => {
+      const el = box.querySelector(sel);
+      el.querySelector('.qi').textContent = ico;
+      el.querySelector('.ql').textContent = label;
+      el.querySelector('.qc').innerHTML = chips;
+      el.dataset.min = min;
+    };
+    const big = (a, b) => [['❤️', a], ['😊', b]].filter(c => Math.abs(c[1]) >= 1).sort((x, y) => Math.abs(y[1]) - Math.abs(x[1]))[0];
+    const yesEff = big(q.tummy, q.happy);
+    let yesChips = q.minutes ? timeDiscs(q.minutes) : '';
+    if (q.id === 'bed') yesChips += `<span class="cchip free">🌅 ${fmtTime(q.wake)}</span>`;
+    else if (yesEff) yesChips += effChip(yesEff[0], yesEff[1]);
+    const noEff = big(-q.skipTummy, -q.skipHappy);
+    const noChips = q.id === 'bed' ? `<span class="cchip spend">😴 ${fmtTime(E.CHILD.wakeLate)}</span>` : noEff ? effChip(noEff[0], noEff[1]) : '';
+    fill('.qbtn.yes', q.yes, Lx.qYes, yesChips, q.minutes || 0);
+    fill('.qbtn.no', q.no, Lx.qNo, noChips, 0);
   }
   function renderPlaces() {
     const Lx = L();
@@ -367,10 +412,21 @@
     // a child will not scroll a box that looks finished, so mark it when there is more below
     requestAnimationFrame(() => { const el = $('actions'); $('game').querySelector('.place').classList.toggle('more', el.scrollHeight > el.clientHeight + 1); });
   }
+  // The question is asked out loud once, after whatever the bear has just said about the last answer — the voice queues
+  // it rather than cutting that off. Its words sit above its two buttons, so a child never has to tap to see it.
+  let askedId = null;
+  function askAloud() {
+    const q = S && E.isChild(S) ? E.question(S) : null;
+    if (!q) { askedId = null; return; }
+    if (q.id === askedId) return;
+    askedId = q.id;
+    speak(t('q.' + q.id), { queue: true });
+  }
   function renderAll() {
     renderTop(); renderTime(S.time); renderMeters(); renderWallet($('wallet'), $('coinCount'), $('coinstack')); renderWish(); renderAvatar(); renderPlace();
     setSky(S.time, 0.3); shownTime = absMin(S.day, S.time); setClock('c', shownTime, false);
     setBubble(S.msgs, { quiet: true });
+    askedId = null; askAloud();
   }
 
   // ---------- bubble: one message at a time, tap for the next ----------
@@ -458,11 +514,18 @@
     if (keys.some(k => ['played', 'show', 'wishBought', 'bought'].includes(k))) SFX.happy();
     if (keys.some(k => ['starving', 'tooSad', 'nothingToEat'].includes(k))) SFX.sad();
     bubble(out.msgs);
+    askAloud();
     save();
     busy = false; $('app').classList.remove('busy');
     // Only time was spent, and the day is not over: let a mis-tap be taken back.
     if (snap && !out.bedtime && out.coins === 0) offerUndo(snap);
     if (out.bedtime) setTimeout(showSummary, keys.includes('midnight') ? 2600 : 1900);
+  }
+  function doAnswer(yes, el) {
+    if (busy || !S || S.phase !== 'day' || !lastQuestion) return;
+    SFX.tap();
+    const q = lastQuestion, snap = snapshot();
+    applyResult(E.answer(S, q.id, yes), el, snap);
   }
   function doAction(id, el) {
     if (busy || !S || S.phase !== 'day') return;
@@ -591,7 +654,8 @@
       s.happy = Math.max(1, Math.min(E.HAPPY_MAX, s.happy));
     }
     if (s.v < 6) { s.mode = 'adult'; s.wake = E.DAY_START; s.chores = {}; } // every saved game so far is a grown-up's day
-    s.v = 6;
+    if (s.v < 7) s.skipped = s.skipped || {}; // the routine is asked now, and a question can be answered "no"
+    s.v = 7;
     return s;
   }
   // The first build of the child's game wrote its save under the grown-up's key. Move it across once, so a day already
@@ -647,6 +711,7 @@
     if (b.id === 'btnNewYes') { SFX.tap(); askWake(); return; }
     if (b.id === 'btnNewNo') { SFX.tap(); $('newConfirm').classList.add('hidden'); $('btnNew').classList.remove('hidden'); $('btnContinue').classList.remove('hidden'); return; }
     if (b.id === 'btnUndo') { doUndo(); return; }
+    if (b.dataset.ans) { doAnswer(b.dataset.ans === 'yes', b); return; }
     if (b.dataset.act) { doAction(b.dataset.act, b); return; }
     if (b.dataset.place) { if (busy || !S || S.phase !== 'day') return; SFX.tap(); if (b.dataset.place === S.loc) { bubble([{ key: 'arrived', place: S.loc }]); return; }
       if (E.isNight(S)) { bubble([{ key: 'nightStayHome' }]); SFX.sad(); return; } openTravelTo(b.dataset.place); return; }
@@ -672,12 +737,15 @@
   // Press a card and it tells you what it does, then shows its time on the bar and its effect on the meters.
   // A quick tap plays it; holding for HOLD_MS means "just read it to me".
   (() => {
-    const from = (ev) => ev.target.closest && ev.target.closest('[data-act], [data-mode]');
-    const effOf = (el) => el.dataset.act ? lastActions[el.dataset.act] : el.dataset.mode ? lastModes[el.dataset.mode] : null;
+    const from = (ev) => ev.target.closest && ev.target.closest('[data-act], [data-mode], [data-ans]');
+    const effOf = (el) => el.dataset.act ? lastActions[el.dataset.act]
+      : el.dataset.mode ? lastModes[el.dataset.mode]
+      : lastQuestion ? answerEffect(lastQuestion, el.dataset.ans === 'yes') : null;
     const press = (ev) => {
       const el = from(ev); if (!el) return;
       const eff = effOf(el); if (!eff) return;
-      speak(el.dataset.act ? sayAction(eff) : sayMode(eff));
+      speak(el.dataset.act ? sayAction(eff) : el.dataset.mode ? sayMode(eff) : sayAnswer(lastQuestion, el.dataset.ans === 'yes'));
+      if (el.dataset.ans && !+el.dataset.min) { showPreview(eff); heldEl = null; clearTimeout(holdTm); holdTm = setTimeout(() => { heldEl = el; }, HOLD_MS); return; }
       if (eff.enabled !== false && +el.dataset.min > 0) showPreview(eff);
       heldEl = null; clearTimeout(holdTm); holdTm = setTimeout(() => { heldEl = el; }, HOLD_MS);
     };

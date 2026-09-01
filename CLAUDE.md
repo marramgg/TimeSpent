@@ -58,9 +58,13 @@ Never commit tokens or credentials. The only credential is Marcos's GitHub token
   `timespent.save.child.v1`, so the start screen's picker chooses which game "Keep playing" resumes.
 - Balance knobs are at the top of `engine.js` (`WORK_PAY`, `ITEMS`, `STALL_UNLOCK`, `PLACES[*].unlockDay`, opening
   hours). One new thing opens per day — keep day 1 to home + bakery + walking (child: home + school + walking).
-- The child's game lives behind `isChild(state)`: `CHILD` (times), `CHORE` (the routine cards), `childRoutine()` and
+- The child's game lives behind `isChild(state)`: `CHILD` (times), `CHORE` (the questions), `childRoutine()` and
   `childActions()`. It moves in 15-minute steps, so anything that reads `E.STEP`/`E.SLOTS` must ask `E.stepOf(S)` /
-  `E.slotsOf(S)` instead. Its two meters are ❤️ Health (which reuses `state.tummy`) and 😊 Happy; no fridge, no wages.
+  `E.slotsOf(S)` instead. Its two meters are ❤️ Health (which reuses `state.tummy`) and 😊 Happy; no fridge, no coins.
+- **The child's routine is asked, not tapped**: `E.question(S)` is the one thing due now (or null) and `E.answer(S, id,
+  yes)` answers it. While a question is pending `actions()` is empty and travel is blocked, so the UI shows the two
+  answer buttons in place of the grid. A new question needs a `CHORE` entry (`tier`, `no` icon, `skipMsg`, `due`) plus
+  `q.<id>` and the `skipMsg` line in both languages — `test/sim.js` fails if any of those are missing.
 - Everything is read aloud and bilingual: every new string goes in `i18n.js` in both EN and PT-PT, and bubble lines
   stay under about ten words.
 - Sleep debt, weather and the late-for-work fine were deliberately removed (see the end of `GAME-DESIGN.md`).
