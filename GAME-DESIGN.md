@@ -113,7 +113,7 @@ Each question says what kind of thing it is, so *has to* and *good for me* are t
 | Shall we wash our hands? | 🧼 | 💩 | ❤️−1 |
 | Shall we tidy up? | 🧹 | 🌪️ | 😊−1 |
 | Shall we have dinner? | 🍽️ | 😫 | ❤️−2 |
-| Shall we have a bath? *(every 2nd day)* | 🛁 | 🦨 | ❤️−1 |
+| Shall we have a bath? *(every 2nd day)* | 🛁 | 🐴 | ❤️−1 |
 | Shall we go to bed now? | 🛏️ 🌅 7:00 | 🦉 😴 7:30 | tomorrow starts half an hour late |
 
 Between the questions the cards come back, and there is only ever one worth pressing: **play**. That is the whole

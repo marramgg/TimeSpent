@@ -1116,7 +1116,7 @@ const TSEngine = (() => {
     dinner:    { emoji: '🍽️', minutes: 30, tummy: 1, happy: 1, cat: 'eat', msg: 'ateDinner', tier: 'should',
                  no: '😫', skipTummy: 2, skipMsg: 'skipDinner', due: (s) => s.time >= CHILD.dinnerFrom },
     bath:      { emoji: '🛁', minutes: 30, tummy: 1, happy: 2, cat: 'play', msg: 'hadBath', tier: 'should',
-                 no: '🦨', skipTummy: 1, skipMsg: 'skipBath', bathDayOnly: true, due: (s) => settled(s, 'dinner') },
+                 no: '🐴', skipTummy: 1, skipMsg: 'skipBath', bathDayOnly: true, due: (s) => settled(s, 'dinner') },
     teethPM:   { emoji: '🪥', minutes: 15, tummy: 1, msg: 'brushedTeeth', tier: 'should',
                  no: '🦠', skipTummy: 1, skipMsg: 'skipTeeth', due: (s) => settled(s, 'dinner') },
   };
