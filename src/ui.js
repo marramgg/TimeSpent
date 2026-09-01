@@ -255,7 +255,7 @@
   function applyI18n() {
     document.querySelectorAll('[data-i18n]').forEach(el => { const v = t(el.dataset.i18n); if (typeof v === 'string') el.textContent = v; });
     $('btnPlay').textContent = t('play'); $('btnContinue').textContent = t('cont'); $('btnNew').textContent = t('newGame');
-    $('btnWakeEarly').textContent = t('wakeQEarly'); $('btnWakeLate').textContent = t('wakeQLate');
+    $('btnWakeEarly').querySelector('.wl').textContent = t('wakeQEarly'); $('btnWakeLate').querySelector('.wl').textContent = t('wakeQLate');
     document.querySelectorAll('#modePick .mode-btn').forEach(b => b.setAttribute('aria-pressed', b.dataset.mode === settings.mode));
     $('btnSleep').textContent = '😴 ' + t('act.sleep'); $('btnWake').textContent = t('act.wake');
     $('travelTitle').textContent = t('travel.title'); $('travelHow').textContent = t('travel.how'); $('shopTitle').textContent = t('act.shop');
@@ -737,12 +737,13 @@
   // Press a card and it tells you what it does, then shows its time on the bar and its effect on the meters.
   // A quick tap plays it; holding for HOLD_MS means "just read it to me".
   (() => {
-    const from = (ev) => ev.target.closest && ev.target.closest('[data-act], [data-mode], [data-ans]');
+    const from = (ev) => ev.target.closest && ev.target.closest('[data-act], [data-mode], [data-ans], [data-say]');
     const effOf = (el) => el.dataset.act ? lastActions[el.dataset.act]
       : el.dataset.mode ? lastModes[el.dataset.mode]
       : lastQuestion ? answerEffect(lastQuestion, el.dataset.ans === 'yes') : null;
     const press = (ev) => {
       const el = from(ev); if (!el) return;
+      if (el.dataset.say) { speak(t(el.dataset.say)); return; } // a button that only has words says them
       const eff = effOf(el); if (!eff) return;
       speak(el.dataset.act ? sayAction(eff) : el.dataset.mode ? sayMode(eff) : sayAnswer(lastQuestion, el.dataset.ans === 'yes'));
       if (el.dataset.ans && !+el.dataset.min) { showPreview(eff); heldEl = null; clearTimeout(holdTm); holdTm = setTimeout(() => { heldEl = el; }, HOLD_MS); return; }
